@@ -1,0 +1,33 @@
+# Project F 개발 진행
+
+## 진행 원칙
+
+기능 하나 선정 → 구현 → Unity 검증 → 사용법 안내 → 사용자 최종 확인 → 다음 기능.
+사용자 확인 전에는 다음 기능 개발이나 main 병합을 진행하지 않습니다.
+수정 요청은 현재 기능 브랜치에서 처리합니다.
+
+## 기준 기획서
+
+2026-09-30 사용자가 제공한 통합 기획서를 [GameConcept.md](Design/GameConcept.md)에 원문으로 보관했습니다.
+아래 개발 순서는 구현 의존성을 고려한 제안이며 기획서의 모든 시스템이 구현되었다는 뜻은 아닙니다.
+
+| 기능 | 상태 | 근거 / 안내 |
+| --- | --- | --- |
+| 마우스 선택·카메라 | 기존 구현 | [InputCamera](Features/InputCamera.md) |
+| 장애물 우회·충돌 회피 | 기존 구현 | [Navigation](Features/Navigation.md) |
+| 다중 유닛 집결 | 기존 구현 | [GroupMovement](Features/GroupMovement.md) |
+| 기본 근접 전투 | 구현·자동 검사 완료, 사용자 확인 대기 | [BasicCombat](Features/BasicCombat.md) |
+| 몬스터 탐지·자동 교전 | 다음 후보, 미착수 | 이번 기능을 확인한 뒤 범위 결정 |
+
+건설·경제, 영웅·병종·지휘력, 침공·포탈, 정찰·지도, 외교·작위 등은 기획 단계입니다.
+
+## 이번 Git 작업
+
+- 시작점: `Input_Camera`의 `b3cb91b` (유닛 이동 구현). 작업 시작 시 미커밋 변경 없음.
+- 작업 브랜치: `codex/basic-combat` — 위 이동 커밋에서 분기.
+- 기존 `Input_Camera`와 `main`은 유지합니다. 먼저 main에 병합하지 않아도 이동 구현을 이어받습니다.
+- 구현 커밋: `7a884cd` (`feat: add basic melee combat sandbox and validation`).
+- 2026-10-01 사용자 요청에 따라 `origin/codex/basic-combat`에 푸시했습니다. 사용자 플레이 확인을 기다리며 main 병합은 아직 수행하지 않았습니다.
+- 승인 후에는 `codex/basic-combat`을 main에 병합하면 포함된 기존 이동 작업도 함께 반영됩니다.
+- 다음 기능은 승인·병합한 main에서 새 `codex/기능명` 브랜치로 시작합니다.
+- 충돌 또는 다른 변경이 생겼다면 병합 전에 다시 확인합니다. 원격 업로드 여부는 결과 안내에 명시합니다.

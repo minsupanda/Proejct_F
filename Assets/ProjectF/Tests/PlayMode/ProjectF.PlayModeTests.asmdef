@@ -1,0 +1,5 @@
+{
+  "name": "ProjectF.PlayModeTests",
+  "references": ["ProjectF.Runtime", "Unity.InputSystem", "Unity.InputSystem.TestFramework"],
+  "optionalUnityReferences": ["TestAssemblies"]
+}

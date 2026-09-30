@@ -1,0 +1,5 @@
+{
+  "name": "ProjectF.Runtime",
+  "rootNamespace": "ProjectF",
+  "references": ["Unity.InputSystem", "Unity.ugui"]
+}
