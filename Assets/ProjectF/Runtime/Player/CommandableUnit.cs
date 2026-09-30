@@ -11,6 +11,7 @@ namespace ProjectF.Player
         [SerializeField] private NavigationWorld2D navigation;
         private Rigidbody2D body;
         private CircleCollider2D circle;
+        public event System.Action MoveCommandIssued;
         public bool IsSelected { get; private set; }
         public bool HasDestination { get; private set; }
         public Vector2 Destination { get; private set; }
@@ -49,6 +50,14 @@ namespace ProjectF.Player
         public void MoveTo(Vector2 destination)
         {
             if (!isActiveAndEnabled) return;
+            MoveCommandIssued?.Invoke();
+            NavigateTo(destination);
+        }
+
+        // Actions such as pursuit share the planner without creating a new player order.
+        internal void NavigateTo(Vector2 destination)
+        {
+            if (!isActiveAndEnabled) return;
             Destination = destination;
             RequestedDestination = destination;
             CommandOrder = navigation.NewOrder();
@@ -72,7 +81,7 @@ namespace ProjectF.Player
         internal void Arrive() { Stop(); TravelState = UnitTravelState.Arrived; }
         internal void RejectDestination() { Stop(); TravelState = UnitTravelState.NoPath; }
 
-        private void Stop()
+        internal void Stop()
         {
             HasDestination = false;
             TravelState = UnitTravelState.Idle;

@@ -1,2 +1,15 @@
 # Proejct_F
 
+Unity 6000.6.0f1 / 2D 전략 게임 프로토타입.
+
+## 지금 확인할 기능
+
+Unity 상단 **Project F → Open Basic Combat Test → Play**.
+아군을 좌클릭·드래그로 선택하고 적을 우클릭하면 공격합니다. 땅을 우클릭하면 이동합니다.
+
+- [기본 근접 전투 사용법과 검증](Docs/Features/BasicCombat.md)
+- [개발 진행·사용자 확인·브랜치 운영](Docs/DevelopmentProgress.md)
+- [통합 기획서 원문](Docs/Design/GameConcept.md)
+- [Unity 프로젝트 구조](Docs/AI/UnityProjectContext.md)
+
+각 기능은 구현·검증 후 사용자의 최종 확인을 받고 다음 단계로 진행합니다.

@@ -5,10 +5,10 @@
 ## Project Summary
 
 - 프로젝트 루트: `C:/Unity/Proejct_F`
-- 현재 단계: 마우스로 유닛을 선택하고 집결 이동 명령을 내리는 2D 전략 게임 이동 프로토타입
-- 현재 브랜치: `Input_Camera`
-- 마지막 분석: 2026-09-21 (Asia/Seoul)
-- 마지막 분석 커밋: `6ef5fc3` + 아직 커밋되지 않은 `Assets/ProjectF`, `Docs`, 프로젝트 설정 변경
+- 현재 단계: 기존 이동 프로토타입 위에 기본 근접 전투를 추가, 사용자 확인 대기
+- 현재 브랜치: `codex/basic-combat` (`Input_Camera`에서 분기)
+- 마지막 분석: 2026-09-30 (Asia/Seoul)
+- 기준 커밋: `b3cb91b` + 이번 기본 전투 작업. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
 
 ## Confirmed Environment
 
@@ -35,6 +35,7 @@
 | `Assets/ProjectF/Runtime/Input` | 마우스 입력, 선택, 이동 명령 | Confirmed | `CommandInput.cs`, `UnitCommandController.cs` |
 | `Assets/ProjectF/Runtime/Camera` | 휠 줌, 가운데 버튼 패닝, 지도 경계 제한 | Confirmed | `StrategyCamera2D.cs` |
 | `Assets/ProjectF/Runtime/Player` | 유닛 상태, 2D 격자, 협력형 A*, 시공간 예약, 이동 총괄 | Confirmed | 해당 폴더의 6개 런타임 스크립트 |
+| `Assets/ProjectF/Runtime/Combat` | 전투 설정, 체력·근접 공격·추적·반격, 시각 피드백 | Confirmed | `CombatSettings`, `UnitCombat`, `CombatFeedback` |
 | `Assets/ProjectF/Editor` | 시험 씬 생성/열기와 설정 에셋 선택 메뉴 | Confirmed | `InputCameraSceneSetup.cs` |
 | `Assets/ProjectF/Tests/PlayMode` | 실제 씬과 가상 입력을 이용한 자동 검사 | Confirmed | `MouseCommandTests.cs`, `NavigationTests.cs` |
 | `Assets/ProjectF/Scenes` | 현재 주 기능을 합친 `InputCamera` 씬 | Confirmed | `InputCamera.unity` |
@@ -53,6 +54,8 @@
 
 - 빌드 씬 0: `Assets/ProjectF/Scenes/InputCamera.unity` (활성, 시작 씬)
 - 빌드 씬 1: `Assets/Scenes/SampleScene.unity` (활성, 현재 코드에서 자동 전환 없음)
+- 빌드 씬 2: `Assets/ProjectF/Scenes/BasicCombat.unity` (활성, 별도 전투 시험장; 기존 이동 씬을 복사해 구성)
+- 전투 씬은 아군 4명·적 3명. `Project F → Open Basic Combat Test`로 열기. 아군 선택 → 적 우클릭 공격, 땅 우클릭 이동·공격 취소. 적은 피격 반격, 자동 탐지 없음
 - 시작 흐름: Unity가 `InputCamera`를 로드 → 각 유닛이 `NavigationWorld2D`에 등록 → `CommandInput`이 입력 액션 활성화 → 좌클릭 선택/우클릭 명령 → 중앙 길찾기 관리자가 FixedUpdate에서 모든 유닛의 경로와 속도를 함께 계산
 - 저장된 주요 루트 오브젝트: `Mouse Commands`, `Main Camera`, `Lord`, `Test Unit 2~4`, `Navigation Obstacles`, `Command HUD`, `Command Destinations`, `Movement Test Ground`
 - 별도의 씬 로더나 메뉴/게임 상태 전환 시스템은 확인되지 않음
@@ -64,6 +67,8 @@
 | Scene composition root | `Mouse Commands` 오브젝트가 입력 컨트롤러와 중앙 길찾기 관리자를 소유 | Confirmed | `InputCamera.unity` |
 | MonoBehaviour-centric | 입력, 카메라, 유닛, 길찾기 총괄은 MonoBehaviour 컴포넌트 | Confirmed | 런타임 코드 |
 | Shared data asset | 모든 기본 유닛이 이동 속도 5의 `LordMovementSettings`를 공유 | Confirmed | 씬 참조와 데이터 에셋 |
+| Combat composition | 선택적 `UnitCombat` 컴포넌트, 아군/적 공유 설정 에셋, 유닛별 런타임 체력, 이벤트 기반 체력 표시 | Confirmed | `Runtime/Combat/*.cs` |
+| Command integration | 외부 `MoveTo`는 `MoveCommandIssued` 이벤트로 공격 취소, 전투 추적은 내부 `NavigateTo`로 같은 중앙 길찾기 사용 | Confirmed | `CommandableUnit`, `UnitCombat` |
 | Central cooperative planning | `NavigationWorld2D`가 모든 유닛을 한 번에 우선순위별 계획하고 예약 | Confirmed | `NavigationWorld2D.cs` |
 | Space-time A* | 위치 노드뿐 아니라 0.1초 시간 단계를 상태에 포함하며 대기 행동 허용 | Confirmed | `CooperativePathfinder.cs` |
 | Broad phase + exact collision | 2단위 공간 버킷으로 후보를 줄이고 swept-disc 거리로 정확 검사 | Confirmed | `ReservationTable2D.cs` |
@@ -82,26 +87,26 @@
 ## Testing And Validation
 
 - EditMode 테스트: 없음
-- PlayMode 테스트: 29개. 마우스/카메라 11개, 길찾기/집결 18개
-- 마지막 저장 로그: 29 통과, 0 실패, 0 건너뜀, 83.88초 (`Logs/gather-tests-final.json`)
-- 마지막 기록 빌드: Windows x64 성공, 약 132.67 MB (`Builds/InputCamera`)
+- PlayMode 테스트: 기존 29개 + 기본 전투 14개
+- 이전 이동 검사: 29 통과, 0 실패, 0 건너뜀, 83.88초 (`Logs/gather-tests-final.json`)
+- 이전 이동 빌드: Windows x64 성공, 약 132.67 MB (`Builds/InputCamera`)
 - 기능 문서에 AI inference 셰이더 관련 500건과 Pipeline 안내 1건의 기존 빌드 경고가 기록됨
-- 이번 온보딩에서는 테스트나 빌드를 다시 실행하지 않았으며 저장된 결과와 소스를 확인함
+- 이번 전투 단계의 최종 검증 결과는 `Docs/Features/BasicCombat.md` 참조
 
 ## Available Unity Tooling
 
 | Capability | Status | Evidence |
 | --- | --- | --- |
 | Unity 프로젝트 파일 읽기 | available | 현재 워크스페이스 직접 확인 |
-| Unity Editor 연결/MCP | unavailable | 현재 세션에 Unity 도구가 노출되지 않고 Unity Editor 프로세스도 없음 |
+| Unity Editor 연결 | available | 현재 프로젝트의 Unity 6000.6.0f1, 설치된 Pipeline을 Unity CLI로 제어 |
 | 과거 Unity 원격 명령 로그 | available as historical evidence | `Logs/gather-tests-final.json`에 `127.0.0.1:7801` 실행 기록 |
-| 콘솔/씬/게임오브젝트 실시간 검사 | unavailable | 현재 연결된 Unity provider 없음 |
-| 테스트/Play Mode/Profiler 실시간 실행 | unavailable | 현재 연결된 Unity provider 없음 |
+| 콘솔/씬/게임오브젝트 실시간 검사 | available | Unity CLI의 console, eval, editor_status |
+| 테스트/Play Mode 실행 | available | Unity CLI의 run_tests, test_status, editor_play/stop |
 
 ## Important Constraints
 
 - 현재 결과물은 완성 게임이 아니라 이동·선택·카메라·충돌 회피를 검증하는 프로토타입이다.
-- 공격, 채집, 건설, 진영, 영웅/병과 규칙, 저장, 메인 메뉴, 편대 유지, Shift 추가 선택/명령 예약은 아직 없다.
+- 기본 근접 공격과 Player/Hostile/Neutral 진영을 추가했다. 채집, 건설, 외교 관계, 영웅/병과 규칙, 저장, 메인 메뉴, 편대 유지, Shift 추가 선택/명령 예약은 아직 없다.
 - 유닛은 스프라이트가 아니라 런타임 메시와 단색 URP Unlit 재질을 조합한 임시 도형이다.
 - `InputCameraSceneSetup.ConfigureMouseControls()`는 기존 씬을 업그레이드하지만 호출 자체가 자동 저장을 보장하지 않는다.
 - 입력은 `Assets/Settings/InputSystem_Actions.inputactions`를 직접 쓰지 않고 `CommandInput`이 마우스 액션을 코드로 생성한다.
@@ -110,8 +115,8 @@
 
 ## Unknowns And Confidence
 
-- 현재 Unity Editor를 실시간 검사하지 않았으므로 Hierarchy의 펼침 상태나 Inspector UI 표시 방식은 저장된 YAML을 기준으로 설명한다.
-- 저장된 테스트/빌드 결과는 2026-09-21의 로그이며 이번 분석에서 재실행하지 않았다.
+- 위 이전 이동 성능·빌드 수치는 2026-09-21 기록이다. 이번 전투 단계에서 별도 검증하고 결과를 기능 문서에 기록한다.
+- 수백~수천 명 전투의 성능 검증, 저장과 부활, 자동 적 탐지는 아직 수행하지 않았다.
 - `SampleScene`은 빌드 목록에 있지만 현재 게임 흐름에서 용도가 확인되지 않았다.
 - CI 설정과 자동 배포 파이프라인은 확인되지 않았다.
 

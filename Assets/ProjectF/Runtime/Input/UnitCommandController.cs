@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using ProjectF.Player;
+using ProjectF.Combat;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -34,7 +35,12 @@ namespace ProjectF.Input
 
         private void Update()
         {
-            selected.RemoveAll(unit => unit == null || !unit.isActiveAndEnabled);
+            for (int i = selected.Count - 1; i >= 0; i--)
+                if (!CanSelect(selected[i]))
+                {
+                    if (selected[i] != null) selected[i].SetSelected(false);
+                    selected.RemoveAt(i);
+                }
             if (!input.Ready || input.PanHeld)
             {
                 CancelDrag();
@@ -59,7 +65,7 @@ namespace ProjectF.Input
                 else if (!input.SelectHeld) CancelDrag();
             }
             if (input.CommandPressed && insideView && !selecting && !PointerOverUI())
-                IssueMove(worldCamera.ScreenToWorldPoint(pointer));
+                IssueCommand(worldCamera.ScreenToWorldPoint(pointer));
         }
 
         private void Select(Vector2 end)
@@ -74,7 +80,7 @@ namespace ProjectF.Input
             navigation.CopyUnitsTo(selectable);
             foreach (var unit in selectable)
             {
-                if (unit == null || !unit.isActiveAndEnabled) continue;
+                if (!CanSelect(unit)) continue;
                 Vector3 screen = worldCamera.WorldToScreenPoint(unit.transform.position);
                 if (screen.z <= 0) continue;
                 if (dragging)
@@ -91,6 +97,31 @@ namespace ProjectF.Input
         }
 
         private void AddSelected(CommandableUnit unit) { selected.Add(unit); unit.SetSelected(true); }
+
+        private static bool CanSelect(CommandableUnit unit)
+        {
+            if (unit == null || !unit.isActiveAndEnabled) return false;
+            return !unit.TryGetComponent<UnitCombat>(out var combat) || combat.IsPlayerControlled;
+        }
+
+        private void IssueCommand(Vector2 point)
+        {
+            if (selected.Count == 0) return;
+            navigation.CopyUnitsTo(selectable);
+            UnitCombat target = null;
+            float closest = float.PositiveInfinity;
+            foreach (var candidate in selectable)
+            {
+                if (candidate == null || !candidate.TryGetComponent<UnitCombat>(out var combat)
+                    || !combat.IsAlive || combat.Faction == UnitFaction.Player
+                    || !candidate.GetComponent<Collider2D>().OverlapPoint(point)) continue;
+                float distance = (candidate.Position - point).sqrMagnitude;
+                if (distance < closest) { closest = distance; target = combat; }
+            }
+            if (target == null) { IssueMove(point); return; }
+            foreach (var unit in selected)
+                if (unit.TryGetComponent<UnitCombat>(out var combat)) combat.Attack(target);
+        }
 
         private void IssueMove(Vector2 target)
         {
