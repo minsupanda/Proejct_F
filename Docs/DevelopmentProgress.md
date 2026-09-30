@@ -26,7 +26,8 @@
 - 시작점: `Input_Camera`의 `b3cb91b` (유닛 이동 구현). 작업 시작 시 미커밋 변경 없음.
 - 작업 브랜치: `codex/basic-combat` — 위 이동 커밋에서 분기.
 - 기존 `Input_Camera`와 `main`은 유지합니다. 먼저 main에 병합하지 않아도 이동 구현을 이어받습니다.
-- 이번 기능은 로컬 커밋으로 보관하고 사용자 플레이 확인을 기다립니다. 원격 푸시와 main 병합은 아직 수행하지 않았습니다.
+- 구현 커밋: `7a884cd` (`feat: add basic melee combat sandbox and validation`).
+- 2026-10-01 사용자 요청에 따라 `origin/codex/basic-combat`에 푸시했습니다. 사용자 플레이 확인을 기다리며 main 병합은 아직 수행하지 않았습니다.
 - 승인 후에는 `codex/basic-combat`을 main에 병합하면 포함된 기존 이동 작업도 함께 반영됩니다.
 - 다음 기능은 승인·병합한 main에서 새 `codex/기능명` 브랜치로 시작합니다.
 - 충돌 또는 다른 변경이 생겼다면 병합 전에 다시 확인합니다. 원격 업로드 여부는 결과 안내에 명시합니다.
