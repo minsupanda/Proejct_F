@@ -26,6 +26,7 @@ namespace ProjectF.Tests
         public IEnumerator SetUp()
         {
             yield return SceneManager.LoadSceneAsync("BasicCombat");
+            CombatTestScene.AddGuards();
             var combatants = Object.FindObjectsByType<UnitCombat>().OrderBy(c => c.name).ToArray();
             allies = combatants.Where(c => c.Faction == UnitFaction.Player).ToArray();
             enemies = combatants.Where(c => c.Faction == UnitFaction.Hostile).ToArray();

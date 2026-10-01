@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace ProjectF.Combat
 {
-    public enum EnemyAIState { Guarding, Engaging, Returning }
+    public enum EnemyAIState { Guarding, Engaging, Returning, Advancing }
 
     /// <summary>Owns hostile target decisions. Combat and navigation retain damage and motion.</summary>
     [DefaultExecutionOrder(-50)]
@@ -21,6 +21,8 @@ namespace ProjectF.Combat
         private static readonly ProfilerMarker detectMarker = new ProfilerMarker("ProjectF.EnemyAI.Detect");
         private float nextThink, lastSeen, lastProgress, nextReturnRetry, recoverUntil;
         private Vector2 progressPosition;
+        private Vector2 advanceDestination, engagementOrigin;
+        private bool advancing;
         public event Action<EnemyAIState> StateChanged;
         public EnemyAIState State { get; private set; }
         public Vector2 HomePosition { get; private set; }
@@ -44,6 +46,7 @@ namespace ProjectF.Combat
             State = EnemyAIState.Guarding;
             DetectionScanCount = LastCandidateCount = 0;
             recoverUntil = 0;
+            advancing = false;
             // Spread spawned guards across their first interval without a static registry or RNG.
             uint phase = unchecked((uint)GetEntityId().GetHashCode() * 2654435761u);
             nextThink = Time.time + (phase % 997) / 997f * settings.ThinkInterval;
@@ -63,6 +66,25 @@ namespace ProjectF.Combat
 
         private void OnAttack(UnitCombat _) => lastProgress = Time.time;
 
+        /// <summary>Advance using normal navigation, engaging visible opponents along the route.</summary>
+        public bool AdvanceTo(Vector2 destination)
+        {
+            if (!isActiveAndEnabled || !combat.IsAlive || !float.IsFinite(destination.x) || !float.IsFinite(destination.y)) return false;
+            advancing = true;
+            advanceDestination = destination;
+            ResumeAdvance();
+            return true;
+        }
+
+        private void ResumeAdvance()
+        {
+            combat.CancelAttack();
+            ChangeState(EnemyAIState.Advancing);
+            unit.NavigateTo(advanceDestination);
+            nextReturnRetry = Time.time + settings.ReturnRetryInterval;
+            recoverUntil = Time.time + settings.RecoveryDelay;
+        }
+
         private void FixedUpdate()
         {
             if (!combat.IsAlive) return;
@@ -70,10 +92,11 @@ namespace ProjectF.Combat
             {
                 var target = combat.Target;
                 float leash = settings.LeashRadius;
+                Vector2 origin = advancing ? engagementOrigin : HomePosition;
                 // Cheap lifetime and leash checks run before UnitCombat's physics tick, so an
                 // invalid target cannot receive one more hit while we wait for a thinking tick.
-                if (!combat.CanAttack(target) || (target.Unit.Position - HomePosition).sqrMagnitude > leash * leash
-                    || (unit.Position - HomePosition).sqrMagnitude > leash * leash)
+                if (!combat.CanAttack(target) || (target.Unit.Position - origin).sqrMagnitude > leash * leash
+                    || (unit.Position - origin).sqrMagnitude > leash * leash)
                 {
                     BeginReturn();
                     return;
@@ -84,10 +107,30 @@ namespace ProjectF.Combat
             switch (State)
             {
                 case EnemyAIState.Guarding:
+                case EnemyAIState.Advancing:
+                    if (State == EnemyAIState.Advancing)
+                    {
+                        // The cooperative planner may assign a nearby free arrival slot when
+                        // several raiders share a destination. Respect its completed arrival.
+                        if (unit.TravelState == UnitTravelState.Arrived
+                            || (unit.Position - advanceDestination).sqrMagnitude <= settings.ReturnTolerance * settings.ReturnTolerance)
+                        {
+                            unit.Stop();
+                            HomePosition = unit.Position;
+                            advancing = false;
+                            ChangeState(EnemyAIState.Guarding);
+                        }
+                        else if (!unit.HasDestination && Time.time >= nextReturnRetry)
+                        {
+                            unit.NavigateTo(advanceDestination);
+                            nextReturnRetry = Time.time + settings.ReturnRetryInterval;
+                        }
+                    }
                     if (Time.time < recoverUntil) return;
                     var target = FindTarget();
                     if (target != null && combat.Attack(target))
                     {
+                        engagementOrigin = unit.Position;
                         lastSeen = lastProgress = Time.time;
                         progressPosition = unit.Position;
                         ChangeState(EnemyAIState.Engaging);
@@ -134,7 +177,7 @@ namespace ProjectF.Combat
                     if (body == null || !body.TryGetComponent<UnitCombat>(out var candidate) || !combat.CanAttack(candidate)) continue;
                     Vector2 position = candidate.Unit.Position;
                     float distance = (position - unit.Position).sqrMagnitude;
-                    if (distance > bestDistance || (position - HomePosition).sqrMagnitude > leashSquared) continue;
+                    if (distance > bestDistance || (!advancing && (position - HomePosition).sqrMagnitude > leashSquared)) continue;
                     // Stable tie-break avoids switching between equally distant units on scans.
                     if (distance == bestDistance && best != null && candidate.GetEntityId().CompareTo(best.GetEntityId()) >= 0) continue;
                     if (!combat.HasLineOfSight(candidate)) continue;
@@ -147,6 +190,7 @@ namespace ProjectF.Combat
 
         private void BeginReturn()
         {
+            if (advancing) { ResumeAdvance(); return; }
             combat.CancelAttack();
             ChangeState(EnemyAIState.Returning);
             IssueReturn();

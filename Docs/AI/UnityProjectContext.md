@@ -5,10 +5,10 @@
 ## Project Summary
 
 - 프로젝트 루트: `C:/Unity/Proejct_F`
-- 현재 단계: 승인된 이동·전투에 적 자동 탐지·교전·복귀를 통합
-- 현재 브랜치: `codex/enemy-ai` (승인 후 main에서 분기)
+- 현재 단계: 승인된 이동·전투·적 AI에 포탈 생성과 첫 침공을 통합
+- 현재 브랜치: `codex/portal-invasion` (승인 후 main에서 분기)
 - 마지막 분석: 2026-10-01 (Asia/Seoul)
-- 기준 커밋: `8bce2a0` (이동·기본 전투 main 병합) + 이번 적 AI 작업. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
+- 기준 커밋: `3901f98` (적 AI main 병합) + 이번 침공 작업. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
 
 ## Confirmed Environment
 
@@ -36,6 +36,8 @@
 | `Assets/ProjectF/Runtime/Camera` | 휠 줌, 가운데 버튼 패닝, 지도 경계 제한 | Confirmed | `StrategyCamera2D.cs` |
 | `Assets/ProjectF/Runtime/Player` | 유닛 상태, 2D 격자, 협력형 A*, 시공간 예약, 이동 총괄 | Confirmed | 해당 폴더의 6개 런타임 스크립트 |
 | `Assets/ProjectF/Runtime/Combat` | 전투·AI 설정, 체력·공격, 적 자율 교전·복귀, 시각 피드백 | Confirmed | `UnitCombat`, `EnemyCombatAI`, 설정과 표시 컴포넌트 |
+| `Assets/ProjectF/Runtime/Invasion` | 1회 침공 설정·생성·종료 상태와 HUD | Confirmed | `PortalInvasion`, `InvasionSettings`, `InvasionHUD` |
+| `Assets/ProjectF/Prefabs` | 비활성 상태로 생성하고 길찾기 연결 후 활성화하는 몬스터 | Confirmed | `PortalRaider.prefab` |
 | `Assets/ProjectF/Editor` | 씬 생성/열기, 적 AI 통합, 설정 에셋 선택 메뉴 | Confirmed | `InputCameraSceneSetup`, `CombatSceneSetup`, `EnemyAISetup` |
 | `Assets/ProjectF/Tests/PlayMode` | 실제 씬과 가상 입력을 이용한 자동 검사 | Confirmed | `MouseCommandTests.cs`, `NavigationTests.cs` |
 | `Assets/ProjectF/Scenes` | 플레이 씬 `BasicCombat`, 기존 이동 검사 씬 `InputCamera` | Confirmed | 두 씬과 빌드 설정 |
@@ -55,10 +57,10 @@
 - 빌드 씬 0: `Assets/ProjectF/Scenes/BasicCombat.unity` (활성, 현재 플레이·빌드 시작 씬)
 - 빌드 씬 1: `Assets/ProjectF/Scenes/InputCamera.unity` (활성, 기존 이동 회귀 검사)
 - 빌드 씬 2: `Assets/Scenes/SampleScene.unity` (활성, 테스트 종료 시 사용)
-- 아군 4명·적 3명. `Project F → Open Gameplay`로 열기. 아군은 수동 선택·공격·이동, 적은 자동 탐지·교전·복귀
-- 시작 흐름: Unity가 `BasicCombat`을 로드 → 유닛이 `NavigationWorld2D`에 등록 → 입력 액션과 적 AI 활성화 → 플레이어 명령·AI 명령을 기존 전투와 중앙 길찾기로 실행
+- 초기 아군 4명. `Project F → Open Gameplay`로 열기. START INVASION → 3초 준비 → 1.5초 간격으로 몬스터 3명 생성 → 진격·교전 → 격퇴/패배 → RESTART
+- 시작 흐름: Unity가 `BasicCombat`을 로드 → 아군이 `NavigationWorld2D`에 등록 → 침공 시작 시 비활성 몬스터 프리팹을 생성·길찾기에 연결·활성화 → 기존 전투와 중앙 길찾기로 진격·교전
 - 저장된 주요 루트 오브젝트: `Mouse Commands`, `Main Camera`, `Lord`, `Test Unit 2~4`, `Navigation Obstacles`, `Command HUD`, `Command Destinations`, `Movement Test Ground`
-- 별도의 씬 로더나 메뉴/게임 상태 전환 시스템은 확인되지 않음
+- 별도 메뉴나 범용 게임 상태 시스템은 없음. `InvasionHUD`의 결과 버튼은 현재 씬을 비동기로 다시 불러옴
 
 ## Architecture
 
@@ -70,6 +72,8 @@
 | Combat composition | 선택적 `UnitCombat` 컴포넌트, 아군/적 공유 설정 에셋, 유닛별 런타임 체력, 이벤트 기반 체력 표시 | Confirmed | `Runtime/Combat/*.cs` |
 | Command integration | 외부 `MoveTo`는 `MoveCommandIssued` 이벤트로 공격 취소, 전투 추적은 내부 `NavigateTo`로 같은 중앙 길찾기 사용 | Confirmed | `CommandableUnit`, `UnitCombat` |
 | Enemy decisions | `EnemyCombatAI`가 적의 대상 선정과 경계/교전/복귀 전환을 담당. 활성 중 `UnitCombat`의 피격 반격을 억제해 명령 소유권을 유지 | Confirmed | `EnemyCombatAI`, `UnitCombat.SuppressIdleRetaliation` |
+| Invasion orders | `AdvanceTo`가 기존 AI에 목적지를 부여. 이동 중 교전하며 대상 상실 시 진격 재개, 도착 후 기존 경계 행동 | Confirmed | `EnemyCombatAI` |
+| Finite wave | `PortalInvasion`이 생성 수와 소유 유닛을 관리. 출구 검사·생성 간격·구성원 정리·승패 판정, UI는 이벤트 구독 | Confirmed | `Runtime/Invasion/*.cs` |
 | Local perception | 2D 물리 영역 조회와 재사용 목록, 기본 0.25초 판단, 첫 탐지 시점 분산, 프로파일러 `ProjectF.EnemyAI.Detect` | Confirmed | `EnemyCombatAI.FindTarget` |
 | Central cooperative planning | `NavigationWorld2D`가 모든 유닛을 한 번에 우선순위별 계획하고 예약 | Confirmed | `NavigationWorld2D.cs` |
 | Space-time A* | 위치 노드뿐 아니라 0.1초 시간 단계를 상태에 포함하며 대기 행동 허용 | Confirmed | `CooperativePathfinder.cs` |
@@ -89,12 +93,14 @@
 ## Testing And Validation
 
 - EditMode 테스트: 없음
-- PlayMode 테스트: 이동·카메라 29개 + 기본 전투 14개 + 적 AI 13개
+- PlayMode 테스트: 이동·카메라 29개 + 기본 전투 14개 + 적 AI 13개 + 침공 12개
 - 기본 전투 테스트는 적 AI를 꺼서 수동 공격 규칙을 분리 검증. 적 AI 테스트는 실제 씬에 연결된 AI를 켜고 검증
 - 이전 이동 검사: 29 통과, 0 실패, 0 건너뜀, 83.88초 (`Logs/gather-tests-final.json`)
 - 이전 이동 빌드: Windows x64 성공, 약 132.67 MB (`Builds/InputCamera`)
 - 기능 문서에 AI inference 셰이더 관련 500건과 Pipeline 안내 1건의 기존 빌드 경고가 기록됨
-- 단계별 검증 결과는 `Docs/Features/BasicCombat.md`, `Docs/Features/EnemyAI.md` 참조
+- 이전 전투·AI 테스트는 `CombatTestScene`에서 실제 몬스터 프리팹 3개를 기존 배치로 생성. 새 침공은 기본 플레이 씬을 그대로 검증
+- 단계별 검증 결과는 `Docs/Features/BasicCombat.md`, `Docs/Features/EnemyAI.md`, `Docs/Features/PortalInvasion.md` 참조
+- 이번 단계: 전체 68개 통과, 포탈 최종 배치 이후 침공 12개 재검사 통과, Windows x64 빌드 오류 0개. 실제 전투 격퇴·재시작과 Player의 화면 없는 시작 확인
 
 ## Available Unity Tooling
 
@@ -108,7 +114,7 @@
 
 ## Important Constraints
 
-- 현재 결과물은 이동·선택·카메라·충돌 회피·근접 전투·적 경계 AI가 연결된 초기 플레이 버전이다.
+- 현재 결과물은 이동·선택·카메라·충돌 회피·근접 전투·적 AI·첫 포탈 침공이 연결된 초기 플레이 버전이다.
 - 기본 근접 공격과 Player/Hostile/Neutral 진영을 추가했다. 채집, 건설, 외교 관계, 영웅/병과 규칙, 저장, 메인 메뉴, 편대 유지, Shift 추가 선택/명령 예약은 아직 없다.
 - 유닛은 스프라이트가 아니라 런타임 메시와 단색 URP Unlit 재질을 조합한 임시 도형이다.
 - `InputCameraSceneSetup.ConfigureMouseControls()`는 기존 씬을 업그레이드하지만 호출 자체가 자동 저장을 보장하지 않는다.
@@ -119,7 +125,7 @@
 ## Unknowns And Confidence
 
 - 위 이전 이동 성능·빌드 수치는 2026-09-21 기록이다. 이번 전투 단계에서 별도 검증하고 결과를 기능 문서에 기록한다.
-- 수백~수천 명 전투, 저장·부활, 몬스터 생성·웨이브, 부대 전술은 아직 구현·검증 범위가 아니다.
+- 수백~수천 명 전투, 저장·부활, 반복 웨이브와 캠페인 일정, 부대 전술은 아직 구현·검증 범위가 아니다.
 - `SampleScene`은 빌드 목록에 있지만 현재 게임 흐름에서 용도가 확인되지 않았다.
 - CI 설정과 자동 배포 파이프라인은 확인되지 않았다.
 

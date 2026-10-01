@@ -22,6 +22,14 @@ namespace ProjectF.Player
         public float Radius => circle != null ? circle.radius * Mathf.Max(Mathf.Abs(transform.lossyScale.x), Mathf.Abs(transform.lossyScale.y)) : .38f;
         public Vector2 Position => body != null ? body.position : (Vector2)transform.position;
 
+        /// <summary>Bind a spawned, inactive prefab before its first activation.</summary>
+        public void InitializeNavigation(NavigationWorld2D world)
+        {
+            if (gameObject.activeInHierarchy)
+                throw new System.InvalidOperationException("Bind navigation before activating a spawned unit.");
+            navigation = world != null ? world : throw new System.ArgumentNullException(nameof(world));
+        }
+
         private void Awake()
         {
             body = GetComponent<Rigidbody2D>();
