@@ -29,6 +29,8 @@ namespace ProjectF.Combat
         public bool IsPlayerControlled => faction == UnitFaction.Player && IsAlive;
         public UnitCombat Target { get; private set; }
         public CommandableUnit Unit => unit;
+        // An enabled AI owns target selection, including whether retreat permits retaliation.
+        internal bool SuppressIdleRetaliation { get; set; }
 
         private void Awake()
         {
@@ -106,7 +108,7 @@ namespace ProjectF.Combat
             if (inRange && Time.time >= nextStrikeCheckTime)
             {
                 nextStrikeCheckTime = Time.time + .1f;
-                if (HasClearStrike(Target))
+                if (HasLineOfSight(Target))
                 {
                     unit.Stop();
                     issuedPursuit = false;
@@ -132,7 +134,7 @@ namespace ProjectF.Combat
             }
         }
 
-        private bool HasClearStrike(UnitCombat other)
+        internal bool HasLineOfSight(UnitCombat other)
         {
             int count = Physics2D.Linecast(unit.Position, other.unit.Position, sightFilter, sightHits);
             if (count == sightHits.Length) return false;
@@ -157,7 +159,7 @@ namespace ProjectF.Combat
                 // Health stays zero on re-enable; scene reload is the prototype's reset.
                 gameObject.SetActive(false);
             }
-            else if (retaliateWhenIdle && Target == null && !unit.HasDestination && CanAttack(source))
+            else if (retaliateWhenIdle && !SuppressIdleRetaliation && Target == null && !unit.HasDestination && CanAttack(source))
                 Attack(source);
         }
     }

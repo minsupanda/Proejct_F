@@ -29,6 +29,8 @@ namespace ProjectF.Tests
             fixture.Setup();
             mouse = InputSystem.AddDevice<Mouse>();
             yield return SceneManager.LoadSceneAsync("BasicCombat");
+            // These tests isolate explicit combat orders; autonomous decisions have their own suite.
+            foreach (var ai in Object.FindObjectsByType<EnemyCombatAI>()) ai.enabled = false;
             camera = Camera.main;
             commands = Object.FindAnyObjectByType<UnitCommandController>();
             navigation = Object.FindAnyObjectByType<NavigationWorld2D>();

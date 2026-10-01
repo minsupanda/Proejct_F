@@ -4,9 +4,11 @@ Unity 6000.6.0f1 / 2D 전략 게임 프로토타입.
 
 ## 지금 확인할 기능
 
-Unity 상단 **Project F → Open Basic Combat Test → Play**.
+Unity 상단 **Project F → Open Gameplay → Play**.
 아군을 좌클릭·드래그로 선택하고 적을 우클릭하면 공격합니다. 땅을 우클릭하면 이동합니다.
+적은 주변 아군을 자동 탐지·공격하며, 추적 한계를 넘거나 대상을 잃으면 복귀합니다.
 
+- [적 자동 탐지·교전·복귀 사용법과 검증](Docs/Features/EnemyAI.md)
 - [기본 근접 전투 사용법과 검증](Docs/Features/BasicCombat.md)
 - [개발 진행·사용자 확인·브랜치 운영](Docs/DevelopmentProgress.md)
 - [통합 기획서 원문](Docs/Design/GameConcept.md)

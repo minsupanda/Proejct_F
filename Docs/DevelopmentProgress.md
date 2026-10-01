@@ -16,18 +16,27 @@
 | 마우스 선택·카메라 | 기존 구현 | [InputCamera](Features/InputCamera.md) |
 | 장애물 우회·충돌 회피 | 기존 구현 | [Navigation](Features/Navigation.md) |
 | 다중 유닛 집결 | 기존 구현 | [GroupMovement](Features/GroupMovement.md) |
-| 기본 근접 전투 | 구현·자동 검사 완료, 사용자 확인 대기 | [BasicCombat](Features/BasicCombat.md) |
-| 몬스터 탐지·자동 교전 | 다음 후보, 미착수 | 이번 기능을 확인한 뒤 범위 결정 |
+| 기본 근접 전투 | 사용자 승인 완료, main 병합 완료 | [BasicCombat](Features/BasicCombat.md) |
+| 적 탐지·자동 교전·복귀 | 구현·자동 검사 완료, 사용자 확인 대기 | [EnemyAI](Features/EnemyAI.md) |
+| 몬스터 생성·첫 침공 | 다음 후보, 미착수 | 적 AI 확인 후 범위 결정 |
 
 건설·경제, 영웅·병종·지휘력, 침공·포탈, 정찰·지도, 외교·작위 등은 기획 단계입니다.
 
-## 이번 Git 작업
+## 승인된 기반 작업
 
 - 시작점: `Input_Camera`의 `b3cb91b` (유닛 이동 구현). 작업 시작 시 미커밋 변경 없음.
 - 작업 브랜치: `codex/basic-combat` — 위 이동 커밋에서 분기.
 - 기존 `Input_Camera`와 `main`은 유지합니다. 먼저 main에 병합하지 않아도 이동 구현을 이어받습니다.
 - 구현 커밋: `7a884cd` (`feat: add basic melee combat sandbox and validation`).
-- 2026-10-01 사용자 요청에 따라 `origin/codex/basic-combat`에 푸시했습니다. 사용자 플레이 확인을 기다리며 main 병합은 아직 수행하지 않았습니다.
-- 승인 후에는 `codex/basic-combat`을 main에 병합하면 포함된 기존 이동 작업도 함께 반영됩니다.
+- 2026-10-01 사용자 요청에 따라 `origin/codex/basic-combat`에 푸시했고, 이후 사용자가 다음 기능 진행을 승인했습니다.
+- 승인된 전투와 기존 이동을 `main`에 병합했습니다. 병합 커밋 `8bce2a0`, GitHub main 반영 완료.
 - 다음 기능은 승인·병합한 main에서 새 `codex/기능명` 브랜치로 시작합니다.
 - 충돌 또는 다른 변경이 생겼다면 병합 전에 다시 확인합니다. 원격 업로드 여부는 결과 안내에 명시합니다.
+
+## 이번 기능: 적 AI
+
+- 브랜치: `codex/enemy-ai`, 승인·병합한 `main`의 `8bce2a0`에서 분기.
+- 기존 `BasicCombat` 플레이 씬에 통합하고, 이전 공격·이동 코드를 재사용합니다.
+- 완료 기준: 자동 탐지·교전, 벽 시야 차단, 추적 한계·대상 상실·정체 시 복귀, 복귀 중 명령 충돌 방지, 설정 분리, 기존 동작 회귀 검사.
+- 검증 후 커밋·푸시하고 사용자 플레이 확인을 받습니다. 이 브랜치의 main 병합과 다음 기능은 그 확인 후 진행합니다.
+- 전체 56개 자동 검사 통과. 실제 경계→자동 공격→복귀 화면 확인 완료. 세부 결과는 기능 문서에 기록합니다.
