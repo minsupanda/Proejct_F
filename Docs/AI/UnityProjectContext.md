@@ -5,10 +5,10 @@
 ## Project Summary
 
 - 프로젝트 루트: `C:/Unity/Proejct_F`
-- 현재 단계: 승인된 이동·전투·적 AI에 포탈 생성과 첫 침공을 통합
-- 현재 브랜치: `codex/portal-invasion` (승인 후 main에서 분기)
-- 마지막 분석: 2026-10-01 (Asia/Seoul)
-- 기준 커밋: `3901f98` (적 AI main 병합) + 이번 침공 작업. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
+- 현재 단계: 승인된 전투·첫 침공에 목재를 소비하는 방어벽 건설을 통합
+- 현재 브랜치: `codex/wall-building` (승인 후 main에서 분기)
+- 마지막 분석: 2026-10-02 (Asia/Seoul)
+- 기준 커밋: `7d35131` (첫 침공 main 병합) + 이번 건설 작업. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
 
 ## Confirmed Environment
 
@@ -37,6 +37,8 @@
 | `Assets/ProjectF/Runtime/Player` | 유닛 상태, 2D 격자, 협력형 A*, 시공간 예약, 이동 총괄 | Confirmed | 해당 폴더의 6개 런타임 스크립트 |
 | `Assets/ProjectF/Runtime/Combat` | 전투·AI 설정, 체력·공격, 적 자율 교전·복귀, 시각 피드백 | Confirmed | `UnitCombat`, `EnemyCombatAI`, 설정과 표시 컴포넌트 |
 | `Assets/ProjectF/Runtime/Invasion` | 1회 침공 설정·생성·종료 상태와 HUD | Confirmed | `PortalInvasion`, `InvasionSettings`, `InvasionHUD` |
+| `Assets/ProjectF/Runtime/Construction` | 비용·배치 검사, 건설 입력과 미리보기, 벽의 길찾기 반영, HUD | Confirmed | 건설 컴포넌트와 설정 |
+| `Assets/ProjectF/Runtime/Economy` | 씬별 목재 잔량·지출 | Confirmed | `EstateStockpile` |
 | `Assets/ProjectF/Prefabs` | 비활성 상태로 생성하고 길찾기 연결 후 활성화하는 몬스터 | Confirmed | `PortalRaider.prefab` |
 | `Assets/ProjectF/Editor` | 씬 생성/열기, 적 AI 통합, 설정 에셋 선택 메뉴 | Confirmed | `InputCameraSceneSetup`, `CombatSceneSetup`, `EnemyAISetup` |
 | `Assets/ProjectF/Tests/PlayMode` | 실제 씬과 가상 입력을 이용한 자동 검사 | Confirmed | `MouseCommandTests.cs`, `NavigationTests.cs` |
@@ -57,7 +59,7 @@
 - 빌드 씬 0: `Assets/ProjectF/Scenes/BasicCombat.unity` (활성, 현재 플레이·빌드 시작 씬)
 - 빌드 씬 1: `Assets/ProjectF/Scenes/InputCamera.unity` (활성, 기존 이동 회귀 검사)
 - 빌드 씬 2: `Assets/Scenes/SampleScene.unity` (활성, 테스트 종료 시 사용)
-- 초기 아군 4명. `Project F → Open Gameplay`로 열기. START INVASION → 3초 준비 → 1.5초 간격으로 몬스터 3명 생성 → 진격·교전 → 격퇴/패배 → RESTART
+- 초기 아군 4명·목재 80. `Project F → Open Gameplay`로 열기. BUILD WALL로 벽 건설(10/칸) → START INVASION → 3초 준비 → 1.5초 간격으로 몬스터 3명 생성 → 진격·교전 → 격퇴/패배 → RESTART
 - 시작 흐름: Unity가 `BasicCombat`을 로드 → 아군이 `NavigationWorld2D`에 등록 → 침공 시작 시 비활성 몬스터 프리팹을 생성·길찾기에 연결·활성화 → 기존 전투와 중앙 길찾기로 진격·교전
 - 저장된 주요 루트 오브젝트: `Mouse Commands`, `Main Camera`, `Lord`, `Test Unit 2~4`, `Navigation Obstacles`, `Command HUD`, `Command Destinations`, `Movement Test Ground`
 - 별도 메뉴나 범용 게임 상태 시스템은 없음. `InvasionHUD`의 결과 버튼은 현재 씬을 비동기로 다시 불러옴
@@ -74,6 +76,8 @@
 | Enemy decisions | `EnemyCombatAI`가 적의 대상 선정과 경계/교전/복귀 전환을 담당. 활성 중 `UnitCombat`의 피격 반격을 억제해 명령 소유권을 유지 | Confirmed | `EnemyCombatAI`, `UnitCombat.SuppressIdleRetaliation` |
 | Invasion orders | `AdvanceTo`가 기존 AI에 목적지를 부여. 이동 중 교전하며 대상 상실 시 진격 재개, 도착 후 기존 경계 행동 | Confirmed | `EnemyCombatAI` |
 | Finite wave | `PortalInvasion`이 생성 수와 소유 유닛을 관리. 출구 검사·생성 간격·구성원 정리·승패 판정, UI는 이벤트 구독 | Confirmed | `Runtime/Invasion/*.cs` |
+| Construction | `WallConstruction`이 준비 단계·범위·겹침·목재를 검사하고 벽 생성. `EstateStockpile`이 자원 소유. 실제 충돌체로 기존 길찾기에 반영 | Confirmed | `Runtime/Construction`, `Runtime/Economy` |
+| Modal pointer ownership | 건설 입력이 소유자별 차단 API로 월드 클릭을 점유. 취소 후 버튼을 뗄 때까지 기존 명령 차단 | Confirmed | `UnitCommandController.SetPointerCommandsBlocked`, `WallPlacementController` |
 | Local perception | 2D 물리 영역 조회와 재사용 목록, 기본 0.25초 판단, 첫 탐지 시점 분산, 프로파일러 `ProjectF.EnemyAI.Detect` | Confirmed | `EnemyCombatAI.FindTarget` |
 | Central cooperative planning | `NavigationWorld2D`가 모든 유닛을 한 번에 우선순위별 계획하고 예약 | Confirmed | `NavigationWorld2D.cs` |
 | Space-time A* | 위치 노드뿐 아니라 0.1초 시간 단계를 상태에 포함하며 대기 행동 허용 | Confirmed | `CooperativePathfinder.cs` |
@@ -93,14 +97,16 @@
 ## Testing And Validation
 
 - EditMode 테스트: 없음
-- PlayMode 테스트: 이동·카메라 29개 + 기본 전투 14개 + 적 AI 13개 + 침공 12개
+- PlayMode 테스트: 이동·카메라 29개 + 기본 전투 14개 + 적 AI 13개 + 침공 12개 + 건설 12개
 - 기본 전투 테스트는 적 AI를 꺼서 수동 공격 규칙을 분리 검증. 적 AI 테스트는 실제 씬에 연결된 AI를 켜고 검증
 - 이전 이동 검사: 29 통과, 0 실패, 0 건너뜀, 83.88초 (`Logs/gather-tests-final.json`)
 - 이전 이동 빌드: Windows x64 성공, 약 132.67 MB (`Builds/InputCamera`)
 - 기능 문서에 AI inference 셰이더 관련 500건과 Pipeline 안내 1건의 기존 빌드 경고가 기록됨
 - 이전 전투·AI 테스트는 `CombatTestScene`에서 실제 몬스터 프리팹 3개를 기존 배치로 생성. 새 침공은 기본 플레이 씬을 그대로 검증
 - 단계별 검증 결과는 `Docs/Features/BasicCombat.md`, `Docs/Features/EnemyAI.md`, `Docs/Features/PortalInvasion.md` 참조
-- 이번 단계: 전체 68개 통과, 포탈 최종 배치 이후 침공 12개 재검사 통과, Windows x64 빌드 오류 0개. 실제 전투 격퇴·재시작과 Player의 화면 없는 시작 확인
+- 이전 침공 단계: 전체 68개 통과, 포탈 최종 배치 이후 침공 12개 재검사 통과, Windows x64 빌드 오류 0개. 실제 전투 격퇴·재시작과 Player의 화면 없는 시작 확인
+- 건설 단계: 전체 80개 통과, 실패·건너뜀 0개, 149.17초. Play 화면에서 벽 5칸·목재 30·미리보기·침공 건설 잠금·적 우회 확인. 세부 결과: `Docs/Features/WallBuilding.md`
+- 건설 Windows x64 빌드 성공, 오류 0개, 기존 경고 501개, 132,799,806바이트. `Builds/WallBuilding/ProjectF_WallBuilding.exe`의 화면 없는 시작 검사 통과. 사용자 최종 확인 대기.
 
 ## Available Unity Tooling
 
@@ -114,8 +120,8 @@
 
 ## Important Constraints
 
-- 현재 결과물은 이동·선택·카메라·충돌 회피·근접 전투·적 AI·첫 포탈 침공이 연결된 초기 플레이 버전이다.
-- 기본 근접 공격과 Player/Hostile/Neutral 진영을 추가했다. 채집, 건설, 외교 관계, 영웅/병과 규칙, 저장, 메인 메뉴, 편대 유지, Shift 추가 선택/명령 예약은 아직 없다.
+- 현재 결과물은 이동·선택·카메라·충돌 회피·근접 전투·적 AI·첫 포탈 침공·목재 소비 방어벽 건설이 연결된 초기 플레이 버전이다.
+- 기본 근접 공격과 Player/Hostile/Neutral 진영을 추가했다. 채집·생산, 건물 체력·공성·철거, 외교 관계, 영웅/병과 규칙, 저장, 메인 메뉴, 편대 유지, Shift 추가 선택/명령 예약은 아직 없다.
 - 유닛은 스프라이트가 아니라 런타임 메시와 단색 URP Unlit 재질을 조합한 임시 도형이다.
 - `InputCameraSceneSetup.ConfigureMouseControls()`는 기존 씬을 업그레이드하지만 호출 자체가 자동 저장을 보장하지 않는다.
 - 입력은 `Assets/Settings/InputSystem_Actions.inputactions`를 직접 쓰지 않고 `CommandInput`이 마우스 액션을 코드로 생성한다.
