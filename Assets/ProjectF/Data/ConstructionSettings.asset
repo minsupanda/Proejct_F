@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9bbeba7ed8009b14b83d497b32d2ed11, type: 3}
+  m_Name: ConstructionSettings
+  m_EditorClassIdentifier: ProjectF.Runtime::ProjectF.Construction.ConstructionSettings
+  wallWoodCost: 10
+  gridSize: 1
+  territory:
+    serializedVersion: 2
+    x: -12
+    y: -7
+    width: 12
+    height: 14

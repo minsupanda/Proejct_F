@@ -18,18 +18,36 @@ namespace ProjectF.Input
         private readonly List<RaycastResult> uiHits = new List<RaycastResult>();
         private readonly List<CommandableUnit> selectable = new List<CommandableUnit>();
         private NavigationWorld2D navigation;
+        private PointerEventData pointerData;
+        private EventSystem pointerEventSystem;
         private Vector2 start;
         private bool selecting, dragging;
+        private readonly HashSet<object> pointerOwners = new HashSet<object>();
+        private bool waitForPointerRelease;
         public IReadOnlyList<CommandableUnit> Selected => selected;
         public bool IsDragging => dragging;
         private void Awake() => navigation = GetComponent<NavigationWorld2D>();
 
+        /// <summary>Modal tools own pointer clicks until released; cancellation never leaks a world order.</summary>
+        public void SetPointerCommandsBlocked(object owner, bool blocked)
+        {
+            if (owner == null) throw new System.ArgumentNullException(nameof(owner));
+            if (blocked) { pointerOwners.Add(owner); CancelDrag(); }
+            else if (pointerOwners.Remove(owner)) waitForPointerRelease = true;
+        }
+
         public bool PointerOverUI()
         {
             if (EventSystem.current == null) return false;
-            var data = new PointerEventData(EventSystem.current) { position = input.Pointer };
+            if (pointerData == null || pointerEventSystem != EventSystem.current)
+            {
+                pointerEventSystem = EventSystem.current;
+                pointerData = new PointerEventData(pointerEventSystem);
+            }
+            pointerData.Reset();
+            pointerData.position = input.Pointer;
             uiHits.Clear();
-            EventSystem.current.RaycastAll(data, uiHits);
+            pointerEventSystem.RaycastAll(pointerData, uiHits);
             return uiHits.Count > 0;
         }
 
@@ -41,6 +59,12 @@ namespace ProjectF.Input
                     if (selected[i] != null) selected[i].SetSelected(false);
                     selected.RemoveAt(i);
                 }
+            if (pointerOwners.Count > 0 || waitForPointerRelease)
+            {
+                CancelDrag();
+                if (pointerOwners.Count == 0 && !input.SelectHeld && !input.CommandHeld) waitForPointerRelease = false;
+                return;
+            }
             if (!input.Ready || input.PanHeld)
             {
                 CancelDrag();
