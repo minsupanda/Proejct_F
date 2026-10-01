@@ -29,6 +29,7 @@ namespace ProjectF.Tests
             fixture.Setup();
             mouse = InputSystem.AddDevice<Mouse>();
             yield return SceneManager.LoadSceneAsync("BasicCombat");
+            CombatTestScene.AddGuards();
             // These tests isolate explicit combat orders; autonomous decisions have their own suite.
             foreach (var ai in Object.FindObjectsByType<EnemyCombatAI>()) ai.enabled = false;
             camera = Camera.main;
@@ -95,6 +96,7 @@ namespace ProjectF.Tests
             allies[0].ReceiveDamage(40);
             enemies[0].ReceiveDamage(int.MaxValue);
             yield return SceneManager.LoadSceneAsync("BasicCombat");
+            CombatTestScene.AddGuards();
             yield return null;
             var restored = Object.FindObjectsByType<UnitCombat>();
             Assert.That(restored.Length, Is.EqualTo(7));
