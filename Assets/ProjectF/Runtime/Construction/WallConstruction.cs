@@ -7,6 +7,7 @@ using UnityEngine;
 namespace ProjectF.Construction
 {
     public enum PlacementResult { Available, Unavailable, OutsideTerritory, Occupied, InsufficientWood }
+    public enum DemolitionResult { Available, Unavailable, NoWall, RefundOverflow }
 
     /// <summary>Owns placement rules and spending. Input and preview are separate.</summary>
     public sealed class WallConstruction : MonoBehaviour
@@ -81,8 +82,10 @@ namespace ProjectF.Construction
             try
             {
                 var wall = Instantiate(wallPrefab, new Vector3(position.x, position.y, 0), Quaternion.identity, structures);
-                wall.Initialize(navigation);
-                if (!stockpile.TrySpendWood(settings.WallWoodCost))
+                int cost = settings.WallWoodCost;
+                // Keep the refund agreed at purchase, even if designers later change the settings.
+                wall.Initialize(navigation, this, settings.GetDemolitionRefund(cost));
+                if (!stockpile.TrySpendWood(cost))
                 {
                     Destroy(wall.gameObject);
                     return PlacementResult.InsufficientWood;
@@ -90,6 +93,43 @@ namespace ProjectF.Construction
                 wall.gameObject.SetActive(true);
                 Physics2D.SyncTransforms();
                 return PlacementResult.Available;
+            }
+            finally { placing = false; Changed?.Invoke(); }
+        }
+
+        public WallStructure FindDemolitionTarget(Vector2 point)
+        {
+            if (!CanConstruct || !float.IsFinite(point.x) || !float.IsFinite(point.y)) return null;
+            Physics2D.SyncTransforms();
+            int count = Physics2D.OverlapPoint(point, filter, overlaps);
+            for (int i = 0; i < count; i++)
+            {
+                var wall = overlaps[i].GetComponent<WallStructure>();
+                if (wall != null && wall.Owner == this && !wall.Retired && wall.isActiveAndEnabled) return wall;
+            }
+            return null;
+        }
+
+        public DemolitionResult ValidateDemolition(WallStructure wall)
+        {
+            if (!CanConstruct || placing) return DemolitionResult.Unavailable;
+            if (wall == null || wall.Owner != this || wall.Retired || !wall.isActiveAndEnabled) return DemolitionResult.NoWall;
+            if (wall.RefundWood > 0 && !stockpile.CanAddWood(wall.RefundWood)) return DemolitionResult.RefundOverflow;
+            return DemolitionResult.Available;
+        }
+
+        public DemolitionResult TryDemolish(WallStructure wall)
+        {
+            var result = ValidateDemolition(wall);
+            if (result != DemolitionResult.Available) return result;
+            placing = true;
+            try
+            {
+                if (wall.RefundWood > 0 && !stockpile.TryAddWood(wall.RefundWood)) return DemolitionResult.RefundOverflow;
+                wall.Retire();
+                Destroy(wall.gameObject);
+                Physics2D.SyncTransforms();
+                return DemolitionResult.Available;
             }
             finally { placing = false; Changed?.Invoke(); }
         }

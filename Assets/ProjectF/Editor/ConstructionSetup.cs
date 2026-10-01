@@ -25,7 +25,7 @@ namespace ProjectF.Editor
             var scene = SceneManager.GetActiveScene();
             if (EditorApplication.isPlayingOrWillChangePlaymode || scene.path != CombatSceneSetup.ScenePath || scene.isDirty)
                 throw new InvalidOperationException("Open and save BasicCombat and stop Play before adding construction.");
-            if (Object.FindAnyObjectByType<WallConstruction>() != null) return;
+            if (Object.FindAnyObjectByType<WallConstruction>() != null) { ConfigureDemolition(); return; }
             var commands = Object.FindAnyObjectByType<UnitCommandController>();
             var invasion = Object.FindAnyObjectByType<PortalInvasion>();
             var canvas = GameObject.Find("Command HUD");
@@ -89,6 +89,40 @@ namespace ProjectF.Editor
             var help = canvas.transform.Find("Controls").GetComponent<UnityEngine.UI.Text>();
             Undo.RecordObject(help, "Update construction controls");
             help.text = "PROJECT F  /  ESTATE DEFENSE\nLMB / drag: select allies   RMB enemy: attack   RMB ground: move / retreat\nBuild walls with wood before starting the invasion. RMB or Esc cancels building.";
+            Undo.CollapseUndoOperations(group);
+            EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene); AssetDatabase.SaveAssets();
+            ConfigureDemolition();
+        }
+        [MenuItem("Project F/Setup/Add Wall Demolition")]
+        public static void ConfigureDemolition()
+        {
+            var scene = SceneManager.GetActiveScene();
+            if (EditorApplication.isPlayingOrWillChangePlaymode || scene.path != CombatSceneSetup.ScenePath || scene.isDirty)
+                throw new InvalidOperationException("Open and save BasicCombat and stop Play before adding demolition.");
+            var hud = Object.FindAnyObjectByType<ConstructionHUD>();
+            if (hud == null) throw new InvalidOperationException("Add wall construction first.");
+            if (hud.transform.Find("Remove Wall") != null) return;
+            Undo.IncrementCurrentGroup();
+            int group = Undo.GetCurrentGroup(); Undo.SetCurrentGroupName("Add wall demolition");
+            var panel = hud.GetComponent<RectTransform>();
+            var status = panel.Find("Status").GetComponent<RectTransform>();
+            var build = panel.Find("Build Wall").GetComponent<RectTransform>();
+            Undo.RecordObjects(new Object[] { panel, status, build, hud }, "Extend construction HUD");
+            panel.sizeDelta = new Vector2(930, 98);
+            status.anchorMin = status.anchorMax = status.pivot = new Vector2(0, 1);
+            status.anchoredPosition = new Vector2(18, -6); status.sizeDelta = new Vector2(894, 32);
+            build.anchoredPosition = new Vector2(-218, -20);
+            var remove = UI("Remove Wall", panel, new Vector2(1, .5f), new Vector2(-14, -20), new Vector2(192, 40));
+            Undo.RegisterCreatedObjectUndo(remove.gameObject, "Add remove button");
+            var image = remove.gameObject.AddComponent<UnityEngine.UI.Image>(); image.color = new Color(.48f, .22f, .1f);
+            var button = remove.gameObject.AddComponent<UnityEngine.UI.Button>(); button.targetGraphic = image;
+            var label = Label(UI("Label", remove, new Vector2(.5f, .5f), Vector2.zero, new Vector2(188, 38)));
+            label.text = "REMOVE WALL"; label.alignment = TextAnchor.MiddleCenter;
+            Ref(hud, "demolishButton", button); Ref(hud, "demolishLabel", label);
+            var help = panel.parent.Find("Controls").GetComponent<UnityEngine.UI.Text>();
+            Undo.RecordObject(help, "Update wall controls");
+            help.text = "PROJECT F  /  ESTATE DEFENSE\nLMB / drag: select allies   RMB enemy: attack   RMB ground: move / retreat\nBuild or remove walls before the invasion. RMB or Esc cancels either tool.";
+            EditorUtility.SetDirty(AssetDatabase.LoadAssetAtPath<ConstructionSettings>(SettingsPath));
             Undo.CollapseUndoOperations(group);
             EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene); AssetDatabase.SaveAssets();
         }

@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectF.Runtime::ProjectF.Construction.ConstructionSettings
   wallWoodCost: 10
   gridSize: 1
+  demolitionRefundPercent: 100
   territory:
     serializedVersion: 2
     x: -12

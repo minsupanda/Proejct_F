@@ -11,6 +11,14 @@ namespace ProjectF.Economy
         public int Wood { get; private set; }
         private void Awake() => Wood = Mathf.Max(0, startingWood);
         private void Start() => Changed?.Invoke();
+        public bool CanAddWood(int amount) => isActiveAndEnabled && amount > 0 && Wood <= int.MaxValue - amount;
+        public bool TryAddWood(int amount)
+        {
+            if (!CanAddWood(amount)) return false;
+            Wood += amount;
+            Changed?.Invoke();
+            return true;
+        }
         public bool TrySpendWood(int amount)
         {
             if (!isActiveAndEnabled || amount <= 0 || Wood < amount) return false;
