@@ -1,3 +1,4 @@
+using ProjectF.Construction;
 using UnityEngine;
 
 namespace ProjectF.Combat
@@ -18,6 +19,7 @@ namespace ProjectF.Combat
         {
             combat.HealthChanged += RefreshHealth;
             combat.Attacked += ShowStrike;
+            combat.WallAttacked += ShowWallStrike;
             RefreshHealth();
             if (strike != null) strike.enabled = false;
         }
@@ -25,6 +27,7 @@ namespace ProjectF.Combat
         {
             combat.HealthChanged -= RefreshHealth;
             combat.Attacked -= ShowStrike;
+            combat.WallAttacked -= ShowWallStrike;
             if (strike != null) strike.enabled = false;
         }
         private void RefreshHealth()
@@ -37,8 +40,17 @@ namespace ProjectF.Combat
         private void ShowStrike(UnitCombat victim)
         {
             if (strike == null || victim == null) return;
+            ShowStrikeAt(victim.transform.position);
+        }
+        private void ShowWallStrike(WallStructure victim)
+        {
+            if (strike == null || victim == null) return;
+            ShowStrikeAt(victim.transform.position);
+        }
+        private void ShowStrikeAt(Vector2 point)
+        {
             strike.SetPosition(0, new Vector3(transform.position.x, transform.position.y, -.3f));
-            strike.SetPosition(1, new Vector3(victim.transform.position.x, victim.transform.position.y, -.3f));
+            strike.SetPosition(1, new Vector3(point.x, point.y, -.3f));
             strike.enabled = true;
             hideStrikeAt = Time.time + .12f;
         }

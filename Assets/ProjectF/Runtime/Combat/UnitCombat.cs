@@ -1,4 +1,5 @@
 using System;
+using ProjectF.Construction;
 using ProjectF.Player;
 using UnityEngine;
 
@@ -22,12 +23,14 @@ namespace ProjectF.Combat
         public event Action HealthChanged;
         public event Action Died;
         public event Action<UnitCombat> Attacked;
+        public event Action<WallStructure> WallAttacked;
         public UnitFaction Faction => faction;
         public int Health { get; private set; }
         public int MaxHealth => settings != null ? settings.MaxHealth : 0;
         public bool IsAlive => Health > 0 && isActiveAndEnabled && unit != null && unit.isActiveAndEnabled;
         public bool IsPlayerControlled => faction == UnitFaction.Player && IsAlive;
         public UnitCombat Target { get; private set; }
+        public WallStructure WallTarget { get; private set; }
         public CommandableUnit Unit => unit;
         // An enabled AI owns target selection, including whether retreat permits retaliation.
         internal bool SuppressIdleRetaliation { get; set; }
@@ -53,7 +56,7 @@ namespace ProjectF.Combat
         {
             unit.MoveCommandIssued -= ClearTarget;
             // Disabling combat alone must also release its movement order.
-            if (Target != null) unit.Stop();
+            if (Target != null || WallTarget != null || issuedPursuit) unit.Stop();
             ClearTarget();
         }
 
@@ -65,6 +68,7 @@ namespace ProjectF.Combat
             if (!CanAttack(other)) return false;
             if (Target == other) return true;
             unit.Stop();
+            WallTarget = null;
             Target = other;
             issuedPursuit = false;
             nextPursuitTime = 0;
@@ -73,20 +77,37 @@ namespace ProjectF.Combat
             return true;
         }
 
+        public bool CanAttackWall(WallStructure wall) => IsAlive && faction == UnitFaction.Hostile && wall != null && wall.IsAlive;
+
+        public bool AttackWall(WallStructure wall)
+        {
+            if (!CanAttackWall(wall)) return false;
+            if (WallTarget == wall) return true;
+            unit.Stop();
+            Target = null;
+            WallTarget = wall;
+            issuedPursuit = false;
+            nextPursuitTime = nextStrikeCheckTime = 0;
+            // Unit and wall attacks share nextAttackTime, including when switching targets.
+            return true;
+        }
+
         public void CancelAttack()
         {
-            if (Target != null || issuedPursuit) unit.Stop();
+            if (Target != null || WallTarget != null || issuedPursuit) unit.Stop();
             ClearTarget();
         }
 
         private void ClearTarget()
         {
             Target = null;
+            WallTarget = null;
             issuedPursuit = false;
         }
 
         private void FixedUpdate()
         {
+            if (WallTarget != null) { UpdateWallAttack(); return; }
             if (Target == null)
             {
                 // A destroyed Unity object compares equal to null before we can inspect it.
@@ -134,12 +155,54 @@ namespace ProjectF.Combat
             }
         }
 
-        internal bool HasLineOfSight(UnitCombat other)
+        private void UpdateWallAttack()
         {
-            int count = Physics2D.Linecast(unit.Position, other.unit.Position, sightFilter, sightHits);
+            if (!CanAttackWall(WallTarget)) { CancelAttack(); return; }
+            Vector2 surface = WallTarget.ClosestPoint(unit.Position);
+            float range = unit.Radius + settings.AttackReach;
+            bool inRange = (surface - unit.Position).sqrMagnitude <= range * range;
+            if (inRange && Time.time < nextAttackTime)
+            {
+                unit.Stop(); issuedPursuit = false;
+                return;
+            }
+            if (inRange && Time.time >= nextStrikeCheckTime)
+            {
+                nextStrikeCheckTime = Time.time + .1f;
+                if (HasClearStrike(surface, WallTarget.Shape))
+                {
+                    unit.Stop(); issuedPursuit = false;
+                    nextAttackTime = Time.time + settings.AttackInterval;
+                    var victim = WallTarget;
+                    victim.ReceiveDamage(settings.AttackDamage, this);
+                    WallAttacked?.Invoke(victim);
+                    if (!victim.IsAlive) CancelAttack();
+                    return;
+                }
+            }
+            if (Time.time < nextPursuitTime) return;
+            nextPursuitTime = Time.time + settings.PursuitInterval;
+            Vector2 targetPosition = WallTarget.transform.position;
+            if (!issuedPursuit || (targetPosition - lastTargetPosition).sqrMagnitude >= .25f || !unit.HasDestination)
+            {
+                lastTargetPosition = targetPosition;
+                // Approach the near surface, never ask navigation to stand inside the wall.
+                Vector2 away = (unit.Position - surface).normalized;
+                unit.NavigateTo(surface + away * (unit.Radius + .15f));
+                issuedPursuit = true;
+            }
+        }
+
+        internal bool HasLineOfSight(UnitCombat other)
+            => HasClearStrike(other.unit.Position, null);
+
+        private bool HasClearStrike(Vector2 point, Collider2D targetShape)
+        {
+            int count = Physics2D.Linecast(unit.Position, point, sightFilter, sightHits);
             if (count == sightHits.Length) return false;
             for (int i = 0; i < count; i++)
-                if (sightHits[i].collider != null && sightHits[i].collider.GetComponentInParent<CommandableUnit>() == null)
+                if (sightHits[i].collider != null && sightHits[i].collider != targetShape
+                    && sightHits[i].collider.GetComponentInParent<CommandableUnit>() == null)
                     return false;
             return true;
         }
@@ -159,7 +222,7 @@ namespace ProjectF.Combat
                 // Health stays zero on re-enable; scene reload is the prototype's reset.
                 gameObject.SetActive(false);
             }
-            else if (retaliateWhenIdle && !SuppressIdleRetaliation && Target == null && !unit.HasDestination && CanAttack(source))
+            else if (retaliateWhenIdle && !SuppressIdleRetaliation && Target == null && WallTarget == null && !unit.HasDestination && CanAttack(source))
                 Attack(source);
         }
     }

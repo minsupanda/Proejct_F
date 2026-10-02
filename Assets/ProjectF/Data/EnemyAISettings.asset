@@ -20,3 +20,5 @@ MonoBehaviour:
   returnTolerance: 0.6
   returnRetryInterval: 1
   recoveryDelay: 1
+  wallDetectionDistance: 4
+  wallRetryDelay: 4

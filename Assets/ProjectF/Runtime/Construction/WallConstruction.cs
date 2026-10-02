@@ -105,7 +105,7 @@ namespace ProjectF.Construction
             for (int i = 0; i < count; i++)
             {
                 var wall = overlaps[i].GetComponent<WallStructure>();
-                if (wall != null && wall.Owner == this && !wall.Retired && wall.isActiveAndEnabled) return wall;
+                if (wall != null && wall.Owner == this && wall.IsAlive) return wall;
             }
             return null;
         }
@@ -113,7 +113,7 @@ namespace ProjectF.Construction
         public DemolitionResult ValidateDemolition(WallStructure wall)
         {
             if (!CanConstruct || placing) return DemolitionResult.Unavailable;
-            if (wall == null || wall.Owner != this || wall.Retired || !wall.isActiveAndEnabled) return DemolitionResult.NoWall;
+            if (wall == null || wall.Owner != this || !wall.IsAlive) return DemolitionResult.NoWall;
             if (wall.RefundWood > 0 && !stockpile.CanAddWood(wall.RefundWood)) return DemolitionResult.RefundOverflow;
             return DemolitionResult.Available;
         }

@@ -2031,7 +2031,7 @@ MonoBehaviour:
 
     LMB / drag: select allies   RMB enemy: attack   RMB ground: move / retreat
 
-    Build or remove walls before the invasion. RMB or Esc cancels either tool.'
+    Build/remove walls before invasion. Enemies can break walls. RMB / Esc cancels tools.'
 --- !u!222 &344415876
 CanvasRenderer:
   m_ObjectHideFlags: 0
