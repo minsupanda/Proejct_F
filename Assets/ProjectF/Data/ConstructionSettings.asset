@@ -15,6 +15,7 @@ MonoBehaviour:
   wallWoodCost: 10
   gridSize: 1
   demolitionRefundPercent: 100
+  wallMaxHealth: 60
   territory:
     serializedVersion: 2
     x: -12

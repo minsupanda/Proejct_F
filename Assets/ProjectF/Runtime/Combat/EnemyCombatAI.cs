@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
+using ProjectF.Construction;
 using ProjectF.Player;
 using Unity.Profiling;
 using UnityEngine;
 
 namespace ProjectF.Combat
 {
-    public enum EnemyAIState { Guarding, Engaging, Returning, Advancing }
+    public enum EnemyAIState { Guarding, Engaging, Returning, Advancing, Breaching }
 
     /// <summary>Owns hostile target decisions. Combat and navigation retain damage and motion.</summary>
     [DefaultExecutionOrder(-50)]
@@ -18,11 +19,14 @@ namespace ProjectF.Combat
         private CommandableUnit unit;
         private readonly List<Collider2D> nearby = new List<Collider2D>(32);
         private readonly ContactFilter2D filter = new ContactFilter2D { useTriggers = false };
+        private readonly RaycastHit2D[] barrierHits = new RaycastHit2D[32];
         private static readonly ProfilerMarker detectMarker = new ProfilerMarker("ProjectF.EnemyAI.Detect");
         private float nextThink, lastSeen, lastProgress, nextReturnRetry, recoverUntil;
         private Vector2 progressPosition;
         private Vector2 advanceDestination, engagementOrigin;
         private bool advancing;
+        private WallStructure rejectedWall;
+        private float retryWallAfter;
         public event Action<EnemyAIState> StateChanged;
         public EnemyAIState State { get; private set; }
         public Vector2 HomePosition { get; private set; }
@@ -47,17 +51,20 @@ namespace ProjectF.Combat
             DetectionScanCount = LastCandidateCount = 0;
             recoverUntil = 0;
             advancing = false;
+            rejectedWall = null;
             // Spread spawned guards across their first interval without a static registry or RNG.
             uint phase = unchecked((uint)GetEntityId().GetHashCode() * 2654435761u);
             nextThink = Time.time + (phase % 997) / 997f * settings.ThinkInterval;
             combat.SuppressIdleRetaliation = true;
             combat.Attacked += OnAttack;
+            combat.WallAttacked += OnWallAttack;
             StateChanged?.Invoke(State);
         }
 
         private void OnDisable()
         {
             combat.Attacked -= OnAttack;
+            combat.WallAttacked -= OnWallAttack;
             combat.SuppressIdleRetaliation = false;
             combat.CancelAttack();
             if (unit != null) unit.Stop();
@@ -65,6 +72,7 @@ namespace ProjectF.Combat
         }
 
         private void OnAttack(UnitCombat _) => lastProgress = Time.time;
+        private void OnWallAttack(WallStructure _) => lastProgress = Time.time;
 
         /// <summary>Advance using normal navigation, engaging visible opponents along the route.</summary>
         public bool AdvanceTo(Vector2 destination)
@@ -73,6 +81,8 @@ namespace ProjectF.Combat
             advancing = true;
             advanceDestination = destination;
             ResumeAdvance();
+            // A new invasion order has no previous engagement to recover from.
+            recoverUntil = Time.time;
             return true;
         }
 
@@ -88,6 +98,16 @@ namespace ProjectF.Combat
         private void FixedUpdate()
         {
             if (!combat.IsAlive) return;
+            if (State == EnemyAIState.Breaching && !combat.CanAttackWall(combat.WallTarget))
+            {
+                ResumeAdvance();
+                return;
+            }
+            if (State == EnemyAIState.Breaching && (unit.Position - engagementOrigin).sqrMagnitude > settings.LeashRadius * settings.LeashRadius)
+            {
+                AbandonWall();
+                return;
+            }
             if (State == EnemyAIState.Engaging)
             {
                 var target = combat.Target;
@@ -108,6 +128,23 @@ namespace ProjectF.Combat
             {
                 case EnemyAIState.Guarding:
                 case EnemyAIState.Advancing:
+                    if (Time.time >= recoverUntil)
+                    {
+                        var target = FindTarget();
+                        if (target != null && Engage(target)) break;
+                        if (State == EnemyAIState.Advancing)
+                        {
+                            var wall = FindBlockingWall();
+                            if (wall != null && combat.AttackWall(wall))
+                            {
+                                engagementOrigin = unit.Position;
+                                lastProgress = Time.time;
+                                progressPosition = unit.Position;
+                                ChangeState(EnemyAIState.Breaching);
+                                break;
+                            }
+                        }
+                    }
                     if (State == EnemyAIState.Advancing)
                     {
                         // The cooperative planner may assign a nearby free arrival slot when
@@ -126,15 +163,18 @@ namespace ProjectF.Combat
                             nextReturnRetry = Time.time + settings.ReturnRetryInterval;
                         }
                     }
-                    if (Time.time < recoverUntil) return;
-                    var target = FindTarget();
-                    if (target != null && combat.Attack(target))
+                    break;
+                case EnemyAIState.Breaching:
+                    // Visible defenders take priority over demolishing a barrier.
+                    var defender = FindTarget();
+                    if (defender != null && Engage(defender)) break;
+                    if ((unit.Position - progressPosition).sqrMagnitude >= .04f)
                     {
-                        engagementOrigin = unit.Position;
-                        lastSeen = lastProgress = Time.time;
                         progressPosition = unit.Position;
-                        ChangeState(EnemyAIState.Engaging);
+                        lastProgress = Time.time;
                     }
+                    if (Time.time - lastProgress >= settings.StalledPursuitTimeout)
+                        AbandonWall();
                     break;
                 case EnemyAIState.Engaging:
                     if (combat.HasLineOfSight(combat.Target)) lastSeen = Time.time;
@@ -158,6 +198,41 @@ namespace ProjectF.Combat
                     else if (!unit.HasDestination && Time.time >= nextReturnRetry) IssueReturn();
                     break;
             }
+        }
+
+        private bool Engage(UnitCombat target)
+        {
+            if (!combat.Attack(target)) return false;
+            engagementOrigin = unit.Position;
+            lastSeen = lastProgress = Time.time;
+            progressPosition = unit.Position;
+            ChangeState(EnemyAIState.Engaging);
+            return true;
+        }
+
+        private void AbandonWall()
+        {
+            rejectedWall = combat.WallTarget;
+            retryWallAfter = Time.time + settings.WallRetryDelay;
+            ResumeAdvance();
+        }
+
+        private WallStructure FindBlockingWall()
+        {
+            Vector2 end = Vector2.MoveTowards(unit.Position, advanceDestination, settings.WallDetectionDistance);
+            int count = Physics2D.Linecast(unit.Position, end, filter, barrierHits);
+            if (count == barrierHits.Length) return null;
+            Collider2D first = null;
+            float distance = float.PositiveInfinity;
+            for (int i = 0; i < count; i++)
+            {
+                var hit = barrierHits[i];
+                if (hit.collider == null || hit.collider.GetComponentInParent<CommandableUnit>() != null) continue;
+                if (hit.distance < distance) { distance = hit.distance; first = hit.collider; }
+            }
+            // An indestructible obstacle in front must not reveal a wall behind it.
+            if (first == null || !first.TryGetComponent<WallStructure>(out var wall) || !combat.CanAttackWall(wall)) return null;
+            return wall == rejectedWall && Time.time < retryWallAfter ? null : wall;
         }
 
         private UnitCombat FindTarget()

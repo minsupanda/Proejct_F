@@ -19,6 +19,7 @@ namespace ProjectF.Combat
                 case EnemyAIState.Engaging: label.text = "ATTACK"; label.color = new Color(1, .6f, .35f); break;
                 case EnemyAIState.Returning: label.text = "RETURN"; label.color = new Color(.5f, .8f, 1); break;
                 case EnemyAIState.Advancing: label.text = "ADVANCE"; label.color = new Color(.9f, .55f, 1); break;
+                case EnemyAIState.Breaching: label.text = "BREAK WALL"; label.color = new Color(1, .7f, .2f); break;
             }
         }
     }

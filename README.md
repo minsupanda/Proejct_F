@@ -9,10 +9,12 @@ Unity 상단 **Project F → Open Gameplay → Play**.
 **REMOVE WALL**을 누르고 주황색으로 표시된 벽을 좌클릭하면 철거·목재 환급을 받습니다. 침공 시작 전까지 방어선을 다시 배치할 수 있습니다.
 아군을 좌클릭·드래그로 선택하고 적을 우클릭하면 공격합니다. 땅을 우클릭하면 이동합니다.
 화면 아래 **START INVASION**을 누르면 포탈에서 몬스터 3명이 등장해 진격합니다.
+벽에는 체력 60이 있으며, 몬스터가 전방의 벽을 공격하면 **BREAK WALL**로 표시됩니다. 체력이 0이 되면 환급 없이 파괴되고 길이 열립니다.
 아군에게 직접 공격 명령을 내려 격퇴합니다. 승패가 결정되면 **RESTART**로 다시 시작할 수 있습니다.
 
 - [목재 소비·방어벽 건설 사용법과 검증](Docs/Features/WallBuilding.md)
 - [방어벽 철거·목재 환급 사용법과 검증](Docs/Features/WallDemolition.md)
+- [방어벽 체력·몬스터 벽 공격 사용법과 검증](Docs/Features/WallCombat.md)
 - [포탈 생성·첫 침공 사용법과 검증](Docs/Features/PortalInvasion.md)
 - [적 자동 탐지·교전·복귀 사용법과 검증](Docs/Features/EnemyAI.md)
 - [기본 근접 전투 사용법과 검증](Docs/Features/BasicCombat.md)
