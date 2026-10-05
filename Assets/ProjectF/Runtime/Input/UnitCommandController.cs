@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ProjectF.Player;
 using ProjectF.Combat;
+using ProjectF.Economy;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -17,6 +18,8 @@ namespace ProjectF.Input
         private readonly List<CommandableUnit> selected = new List<CommandableUnit>();
         private readonly List<RaycastResult> uiHits = new List<RaycastResult>();
         private readonly List<CommandableUnit> selectable = new List<CommandableUnit>();
+        private readonly Collider2D[] resourceHits = new Collider2D[16];
+        private readonly ContactFilter2D resourceFilter = new ContactFilter2D { useTriggers = false };
         private NavigationWorld2D navigation;
         private PointerEventData pointerData;
         private EventSystem pointerEventSystem;
@@ -142,7 +145,18 @@ namespace ProjectF.Input
                 float distance = (candidate.Position - point).sqrMagnitude;
                 if (distance < closest) { closest = distance; target = combat; }
             }
-            if (target == null) { IssueMove(point); return; }
+            if (target == null)
+            {
+                int count = Physics2D.OverlapPoint(point, resourceFilter, resourceHits);
+                for (int i = 0; i < count; i++)
+                {
+                    if (!resourceHits[i].TryGetComponent<WoodResourceNode>(out var node) || !node.IsAvailable) continue;
+                    foreach (var unit in selected)
+                        if (unit.TryGetComponent<WoodGatherer>(out var gatherer)) gatherer.Gather(node);
+                    return;
+                }
+                IssueMove(point); return;
+            }
             foreach (var unit in selected)
                 if (unit.TryGetComponent<UnitCombat>(out var combat)) combat.Attack(target);
         }
