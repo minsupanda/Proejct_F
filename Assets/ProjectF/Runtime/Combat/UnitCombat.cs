@@ -22,6 +22,7 @@ namespace ProjectF.Combat
         private bool issuedPursuit;
         public event Action HealthChanged;
         public event Action Died;
+        public event Action AttackCommandIssued;
         public event Action<UnitCombat> Attacked;
         public event Action<WallStructure> WallAttacked;
         public UnitFaction Faction => faction;
@@ -66,6 +67,7 @@ namespace ProjectF.Combat
         public bool Attack(UnitCombat other)
         {
             if (!CanAttack(other)) return false;
+            AttackCommandIssued?.Invoke();
             if (Target == other) return true;
             unit.Stop();
             WallTarget = null;
@@ -82,6 +84,7 @@ namespace ProjectF.Combat
         public bool AttackWall(WallStructure wall)
         {
             if (!CanAttackWall(wall)) return false;
+            AttackCommandIssued?.Invoke();
             if (WallTarget == wall) return true;
             unit.Stop();
             Target = null;

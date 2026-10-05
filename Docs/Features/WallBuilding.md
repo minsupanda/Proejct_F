@@ -61,7 +61,7 @@ Play를 멈추고 **Project F → Select Construction Settings**를 선택합니
 - 미리보기·카메라가 공유하는 UI 포인터 검사도 PointerEventData를 재사용하며, EventSystem이 바뀔 때에만 다시 생성합니다.
 - 목재와 안내 문구는 상태가 달라질 때 갱신합니다. 매 프레임 전역 오브젝트 검색을 하지 않습니다.
 - 기본 목재로 최대 8칸을 지을 수 있습니다. 대규모 성벽·수백 명 전투 성능을 보장하는 단계는 아닙니다.
-- 벽은 **길을 막는 건설물**입니다. 철거·환급은 후속 [WallDemolition](WallDemolition.md), 체력·몬스터의 벽 공격은 [WallCombat](WallCombat.md)에 추가했습니다. 공성 장비·일꾼·공사 시간, 목재 채집·생산, 저장·불러오기는 아직 포함하지 않습니다. 우회나 공격할 수 없는 통로에서는 유닛이 대기할 수 있습니다.
+- 벽은 **길을 막는 건설물**입니다. 철거·환급은 후속 [WallDemolition](WallDemolition.md), 체력·몬스터의 벽 공격은 [WallCombat](WallCombat.md), 목재 채집은 [WoodGathering](WoodGathering.md)에 추가했습니다. 공성 장비·전용 일꾼·공사 시간·생산 시설·저장·불러오기는 아직 포함하지 않습니다. 우회나 공격할 수 없는 통로에서는 유닛이 대기할 수 있습니다.
 - 개발용 외형과 영어 HUD를 사용합니다. 패키지나 그래픽·물리 설정 변경은 필요하지 않습니다.
 
 ## 검증
