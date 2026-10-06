@@ -8,7 +8,7 @@ namespace ProjectF.Invasion
 {
     public enum InvasionState { Ready, Preparing, Spawning, Fighting, Repelled, Defeated, Cancelled }
 
-    /// <summary>Scene-owned finite wave. Owns spawn timing and members; AI owns their orders.</summary>
+    /// <summary>Scene-owned invasion rounds. Owns progression, spawn timing and members; AI owns their orders.</summary>
     public sealed class PortalInvasion : MonoBehaviour
     {
         [SerializeField] private InvasionSettings settings;
@@ -23,11 +23,16 @@ namespace ProjectF.Invasion
         private float nextSpawn, nextMemberCheck;
         private int nextExit, total;
         private bool initialized;
+        private bool seriesStarted;
+        private int plannedWaves, firstWaveUnits, additionalUnits;
         public event Action Changed;
         public InvasionState State { get; private set; } = InvasionState.Ready;
         public int SpawnedCount { get; private set; }
         public int ActiveCount => members.Count;
         public int TotalCount => initialized ? total : settings != null ? settings.UnitCount : 0;
+        public int WaveNumber { get; private set; } = 1;
+        public int WaveCount => seriesStarted ? plannedWaves : settings != null ? settings.WaveCount : 1;
+        public bool CanPrepareNextWave => initialized && isActiveAndEnabled && State == InvasionState.Repelled && WaveNumber < WaveCount;
         public bool ExitBlocked { get; private set; }
         public float PreparationRemaining => State == InvasionState.Preparing ? Mathf.Max(0, nextSpawn - Time.time) : 0;
         public IReadOnlyList<UnitCombat> Members => members;
@@ -52,9 +57,34 @@ namespace ProjectF.Invasion
         public bool Begin()
         {
             if (!initialized || !isActiveAndEnabled || State != InvasionState.Ready || Time.timeScale <= 0) return false;
+            if (!seriesStarted)
+            {
+                // Lock the round plan at first launch; asset edits never alter a running series.
+                plannedWaves = settings.WaveCount;
+                firstWaveUnits = settings.UnitCount;
+                additionalUnits = settings.AdditionalUnitsPerWave;
+                total = firstWaveUnits;
+                seriesStarted = true;
+            }
             nextSpawn = Time.time + settings.PreparationSeconds;
+            nextMemberCheck = Time.time;
             SetState(HasDefenders() ? InvasionState.Preparing : InvasionState.Defeated);
             return State == InvasionState.Preparing;
+        }
+
+        /// <summary>Return to preparation in the same scene, preserving survivors and estate resources.</summary>
+        public bool PrepareNextWave()
+        {
+            if (!CanPrepareNextWave || Time.timeScale <= 0 || members.Count != 0) return false;
+            if (!HasDefenders()) { Finish(InvasionState.Defeated); return false; }
+            WaveNumber++;
+            total = Mathf.Clamp(firstWaveUnits + additionalUnits * (WaveNumber - 1), 1, 32);
+            SpawnedCount = 0;
+            nextExit = 0;
+            nextSpawn = nextMemberCheck = 0;
+            ExitBlocked = false;
+            SetState(InvasionState.Ready);
+            return true;
         }
 
         private void Update()
@@ -107,7 +137,7 @@ namespace ProjectF.Invasion
                 Physics2D.OverlapCircle(exit.position, radius + .1f, filter, overlaps);
                 if (overlaps.Count != 0) continue;
                 var member = Instantiate(enemyPrefab, exit.position, Quaternion.identity, transform);
-                member.name = "Portal Raider " + (SpawnedCount + 1);
+                member.name = "Portal Raider " + WaveNumber + "-" + (SpawnedCount + 1);
                 member.GetComponent<CommandableUnit>().InitializeNavigation(navigation);
                 members.Add(member);
                 member.Died += OnMemberDied;
@@ -160,7 +190,8 @@ namespace ProjectF.Invasion
             }
             members.Clear();
             ExitBlocked = false;
-            if (initialized && !IsFinished) SetState(InvasionState.Cancelled);
+            if (initialized && (!IsFinished || (State == InvasionState.Repelled && WaveNumber < WaveCount)))
+                SetState(InvasionState.Cancelled);
         }
     }
 }

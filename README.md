@@ -11,8 +11,10 @@ Unity 상단 **Project F → Open Gameplay → Play**.
 아군을 좌클릭·드래그로 선택하고 적을 우클릭하면 공격합니다. 땅을 우클릭하면 이동합니다.
 화면 아래 **START INVASION**을 누르면 포탈에서 몬스터 3명이 등장해 진격합니다.
 벽에는 체력 60이 있으며, 몬스터가 전방의 벽을 공격하면 **BREAK WALL**로 표시됩니다. 체력이 0이 되면 환급 없이 파괴되고 길이 열립니다.
-아군에게 직접 공격 명령을 내려 격퇴합니다. 승패가 결정되면 **RESTART**로 다시 시작할 수 있습니다.
+아군에게 직접 공격 명령을 내려 격퇴합니다. **NEXT ROUND**를 누르면 체력·목재·나무 잔량·벽을 유지하며 다음 침공을 준비합니다. 채집·건설·철거를 다시 하고 **START INVASION**으로 진행합니다.
+기본 **3차 침공(3명 → 4명 → 5명)**을 모두 막거나 패배하면 **RESTART**로 처음부터 다시 시작합니다.
 
+- [반복 침공·다음 차수 준비 사용법과 검증](Docs/Features/InvasionRounds.md)
 - [목재 채집·추가 건설 사용법과 검증](Docs/Features/WoodGathering.md)
 - [목재 소비·방어벽 건설 사용법과 검증](Docs/Features/WallBuilding.md)
 - [방어벽 철거·목재 환급 사용법과 검증](Docs/Features/WallDemolition.md)
