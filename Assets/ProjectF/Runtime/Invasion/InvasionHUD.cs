@@ -23,15 +23,18 @@ namespace ProjectF.Invasion
         private void Refresh()
         {
             action.interactable = !loading && (invasion.State == InvasionState.Ready || IsTerminal);
-            actionLabel.text = IsTerminal ? "RESTART" : "START INVASION";
+            actionLabel.text = invasion.CanPrepareNextWave ? "NEXT ROUND" : IsTerminal ? "RESTART" : "START INVASION";
+            string round = "INVASION " + invasion.WaveNumber + "/" + invasion.WaveCount;
             if (invasion.ExitBlocked) { status.text = "PORTAL EXIT BLOCKED  /  Waiting for a clear exit"; return; }
             switch (invasion.State)
             {
-                case InvasionState.Ready: status.text = "FIRST INVASION  /  Position your units, then open the portal"; break;
-                case InvasionState.Preparing: status.text = "PORTAL OPENING  /  " + Mathf.CeilToInt(invasion.PreparationRemaining) + "s"; break;
+                case InvasionState.Ready: status.text = round + "  /  Gather, build and position units  /  Raiders " + invasion.TotalCount; break;
+                case InvasionState.Preparing: status.text = round + "  /  PORTAL OPENING  /  " + Mathf.CeilToInt(invasion.PreparationRemaining) + "s"; break;
                 case InvasionState.Spawning:
-                case InvasionState.Fighting: status.text = "FIRST INVASION  /  Arrived " + invasion.SpawnedCount + "/" + invasion.TotalCount + "  /  Alive " + invasion.ActiveCount; break;
-                case InvasionState.Repelled: status.text = "INVASION REPELLED  /  All portal raiders defeated"; break;
+                case InvasionState.Fighting: status.text = round + "  /  Arrived " + invasion.SpawnedCount + "/" + invasion.TotalCount + "  /  Alive " + invasion.ActiveCount; break;
+                case InvasionState.Repelled: status.text = invasion.CanPrepareNextWave
+                    ? round + " REPELLED  /  Continue to prepare the next defense"
+                    : "ALL INVASIONS REPELLED  /  " + invasion.WaveCount + " rounds survived"; break;
                 case InvasionState.Defeated: status.text = "DEFEAT  /  All allied units lost"; break;
                 case InvasionState.Cancelled: status.text = "INVASION CANCELLED"; break;
             }
@@ -40,6 +43,7 @@ namespace ProjectF.Invasion
         private void OnAction()
         {
             if (loading || Time.timeScale <= 0) return;
+            if (invasion.CanPrepareNextWave) { invasion.PrepareNextWave(); return; }
             if (!IsTerminal) { invasion.Begin(); return; }
             loading = true;
             Refresh();

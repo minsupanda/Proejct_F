@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: FirstInvasionSettings
   m_EditorClassIdentifier: ProjectF.Runtime::ProjectF.Invasion.InvasionSettings
   unitCount: 3
+  waveCount: 3
+  additionalUnitsPerWave: 1
   preparationSeconds: 3
   spawnInterval: 1.5
   blockedRetryInterval: 0.5
