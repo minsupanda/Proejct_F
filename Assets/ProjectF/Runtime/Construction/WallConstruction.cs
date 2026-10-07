@@ -8,6 +8,7 @@ namespace ProjectF.Construction
 {
     public enum PlacementResult { Available, Unavailable, OutsideTerritory, Occupied, InsufficientWood }
     public enum DemolitionResult { Available, Unavailable, NoWall, RefundOverflow }
+    public enum RepairResult { Available, Unavailable, NoWall, AlreadyHealthy, InsufficientWood }
 
     /// <summary>Owns placement rules and spending. Input and preview are separate.</summary>
     public sealed class WallConstruction : MonoBehaviour
@@ -84,7 +85,7 @@ namespace ProjectF.Construction
                 var wall = Instantiate(wallPrefab, new Vector3(position.x, position.y, 0), Quaternion.identity, structures);
                 int cost = settings.WallWoodCost;
                 // Keep the refund agreed at purchase, even if designers later change the settings.
-                wall.Initialize(navigation, this, settings.GetDemolitionRefund(cost));
+                wall.Initialize(navigation, this, settings.GetDemolitionRefund(cost), cost);
                 if (!stockpile.TrySpendWood(cost))
                 {
                     Destroy(wall.gameObject);
@@ -97,6 +98,30 @@ namespace ProjectF.Construction
             finally { placing = false; Changed?.Invoke(); }
         }
 
+        public RepairResult ValidateRepair(WallStructure wall, out int woodCost)
+        {
+            woodCost = 0;
+            if (!CanConstruct || placing) return RepairResult.Unavailable;
+            if (wall == null || wall.Owner != this || !wall.IsAlive) return RepairResult.NoWall;
+            if (wall.Health == wall.MaxHealth) return RepairResult.AlreadyHealthy;
+            woodCost = wall.RepairWoodCost;
+            return stockpile.Wood >= woodCost ? RepairResult.Available : RepairResult.InsufficientWood;
+        }
+
+        public RepairResult TryRepair(WallStructure wall)
+        {
+            var result = ValidateRepair(wall, out int cost);
+            if (result != RepairResult.Available) return result;
+            placing = true;
+            try
+            {
+                // Both balance and health are committed before resource-change callbacks run.
+                return stockpile.TrySpendWood(cost, wall.RestoreFullHealth) ? RepairResult.Available : RepairResult.InsufficientWood;
+            }
+            finally { placing = false; Changed?.Invoke(); }
+        }
+
+        // Shared point targeting for repair and demolition; keep the existing public entry point.
         public WallStructure FindDemolitionTarget(Vector2 point)
         {
             if (!CanConstruct || !float.IsFinite(point.x) || !float.IsFinite(point.y)) return null;

@@ -113,7 +113,8 @@ namespace ProjectF.Tests
             Assert.That(stock.Wood, Is.EqualTo(wood)); Assert.That(tree.Remaining, Is.EqualTo(remaining));
             Assert.That(wall.Health, Is.EqualTo(45)); Assert.That(allies[0].Health, Is.EqualTo(health)); Assert.That(allies[3].IsAlive, Is.False);
             Assert.That(construction.TryDemolish(wall), Is.EqualTo(DemolitionResult.Available));
-            Assert.That(stock.Wood, Is.EqualTo(wood + 10));
+            // Damaged walls now return only their remaining material value (45/60 of 10).
+            Assert.That(stock.Wood, Is.EqualTo(wood + 7));
         }
         [UnityTest]
         public IEnumerator ActualNextRoundButtonPreservesSceneAndAllowsConstructionThenLocksOnStart()
