@@ -17,13 +17,19 @@ namespace ProjectF.Construction
         public bool IsAlive => Health > 0 && !Retired && isActiveAndEnabled && shape != null && shape.enabled;
         internal Collider2D Shape => shape;
         internal WallConstruction Owner { get; private set; }
-        public int RefundWood { get; private set; }
+        public int PaidWood { get; private set; }
+        public int MaximumRefundWood { get; private set; }
+        // Integer arithmetic keeps rounding stable even at the largest supported costs.
+        public int RefundWood => MaxHealth > 0 ? (int)((long)MaximumRefundWood * Health / MaxHealth) : 0;
+        public int RepairWoodCost => MaxHealth > 0 && Health < MaxHealth
+            ? (int)(((long)PaidWood * (MaxHealth - Health) + MaxHealth - 1) / MaxHealth) : 0;
         internal bool Retired { get; private set; }
-        internal void Initialize(NavigationWorld2D world, WallConstruction owner, int refundWood)
+        internal void Initialize(NavigationWorld2D world, WallConstruction owner, int refundWood, int paidWood)
         {
             Initialize(world);
             Owner = owner;
-            RefundWood = refundWood;
+            MaximumRefundWood = refundWood;
+            PaidWood = paidWood;
             MaxHealth = Health = owner.Settings.WallMaxHealth;
         }
         public void Initialize(NavigationWorld2D world)
@@ -46,6 +52,11 @@ namespace ProjectF.Construction
             Destroy(gameObject);
         }
         private void OnEnable() { if (navigation != null) navigation.MarkObstaclesDirty(); }
+        internal void RestoreFullHealth()
+        {
+            Health = MaxHealth;
+            HealthChanged?.Invoke();
+        }
         private void OnDisable() { if (navigation != null) navigation.MarkObstaclesDirty(); }
         internal void Retire()
         {

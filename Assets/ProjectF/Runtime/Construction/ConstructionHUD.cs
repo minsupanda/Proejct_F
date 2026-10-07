@@ -13,6 +13,8 @@ namespace ProjectF.Construction
         [SerializeField] private UnityEngine.UI.Text buttonLabel;
         [SerializeField] private UnityEngine.UI.Button demolishButton;
         [SerializeField] private UnityEngine.UI.Text demolishLabel;
+        [SerializeField] private UnityEngine.UI.Button repairButton;
+        [SerializeField] private UnityEngine.UI.Text repairLabel;
         private bool lastCanConstruct;
         private void OnEnable()
         {
@@ -21,6 +23,7 @@ namespace ProjectF.Construction
             placement.Changed += Refresh;
             button.onClick.AddListener(placement.Toggle);
             if (demolishButton != null) demolishButton.onClick.AddListener(placement.ToggleDemolition);
+            if (repairButton != null) repairButton.onClick.AddListener(placement.ToggleRepair);
             Refresh();
         }
         private void OnDisable()
@@ -30,6 +33,7 @@ namespace ProjectF.Construction
             placement.Changed -= Refresh;
             button.onClick.RemoveListener(placement.Toggle);
             if (demolishButton != null) demolishButton.onClick.RemoveListener(placement.ToggleDemolition);
+            if (repairButton != null) repairButton.onClick.RemoveListener(placement.ToggleRepair);
         }
         private void Refresh()
         {
@@ -41,8 +45,24 @@ namespace ProjectF.Construction
                 demolishButton.interactable = placement.IsDemolishing || construction.CanConstruct;
                 demolishLabel.text = placement.IsDemolishing ? "CANCEL REMOVE" : "REMOVE WALL";
             }
+            if (repairButton != null)
+            {
+                repairButton.interactable = placement.IsRepairing || construction.CanConstruct;
+                repairLabel.text = placement.IsRepairing ? "CANCEL REPAIR" : "REPAIR WALL";
+            }
             string hint = "Build before invasion";
-            if (placement.IsDemolishing)
+            if (placement.IsRepairing)
+            {
+                if (placement.RepairTarget == null) hint = "Point at a damaged wall / Esc: cancel";
+                else if (placement.RepairStatus == RepairResult.AlreadyHealthy) hint = "Wall is already at full health";
+                else
+                {
+                    hint = "HP " + placement.RepairTarget.Health + "/" + placement.RepairTarget.MaxHealth
+                        + " / Repair " + placement.RepairCost + " wood";
+                    hint += placement.RepairStatus == RepairResult.InsufficientWood ? " / Not enough" : " / LMB";
+                }
+            }
+            else if (placement.IsDemolishing)
             {
                 if (placement.DemolitionStatus == DemolitionResult.RefundOverflow) hint = "Wood storage full";
                 else if (placement.DemolitionTarget != null)

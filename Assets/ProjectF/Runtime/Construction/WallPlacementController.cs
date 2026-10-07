@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace ProjectF.Construction
 {
-    public enum ConstructionMode { None, Build, Demolish }
+    public enum ConstructionMode { None, Build, Demolish, Repair }
     [DefaultExecutionOrder(-10)]
     public sealed class WallPlacementController : MonoBehaviour
     {
@@ -19,13 +19,18 @@ namespace ProjectF.Construction
         private float nextPreviewCheck;
         private Vector2 lastCell;
         private Vector2 lastDemolitionPoint;
+        private int lastTargetHealth, lastTargetRefund;
         public event Action Changed;
         public ConstructionMode Mode { get; private set; }
         public bool IsPlacing => Mode == ConstructionMode.Build;
         public bool IsDemolishing => Mode == ConstructionMode.Demolish;
+        public bool IsRepairing => Mode == ConstructionMode.Repair;
         public bool IsEditing => Mode != ConstructionMode.None;
         public WallStructure DemolitionTarget { get; private set; }
         public DemolitionResult DemolitionStatus { get; private set; } = DemolitionResult.NoWall;
+        public WallStructure RepairTarget { get; private set; }
+        public RepairResult RepairStatus { get; private set; } = RepairResult.NoWall;
+        public int RepairCost { get; private set; }
         public PlacementResult Result { get; private set; } = PlacementResult.Available;
         public bool PreviewVisible => preview.enabled;
 
@@ -50,12 +55,20 @@ namespace ProjectF.Construction
             if (!isActiveAndEnabled || !construction.CanConstruct) return;
             BeginMode(ConstructionMode.Demolish);
         }
+        public void ToggleRepair()
+        {
+            if (IsRepairing) { Cancel(); return; }
+            if (!isActiveAndEnabled || !construction.CanConstruct) return;
+            BeginMode(ConstructionMode.Repair);
+        }
         private void BeginMode(ConstructionMode mode)
         {
             Mode = mode;
             preview.enabled = false;
             DemolitionTarget = null;
             DemolitionStatus = DemolitionResult.NoWall;
+            RepairTarget = null; RepairStatus = RepairResult.NoWall; RepairCost = 0;
+            lastTargetHealth = lastTargetRefund = -1;
             Result = PlacementResult.Available;
             commands.SetPointerCommandsBlocked(this, true);
             nextPreviewCheck = 0;
@@ -74,6 +87,7 @@ namespace ProjectF.Construction
             Mode = ConstructionMode.None;
             DemolitionTarget = null;
             DemolitionStatus = DemolitionResult.NoWall;
+            RepairTarget = null; RepairStatus = RepairResult.NoWall; RepairCost = 0;
             preview.enabled = boundary.enabled = false;
             commands.SetPointerCommandsBlocked(this, false);
             Changed?.Invoke();
@@ -87,9 +101,11 @@ namespace ProjectF.Construction
                 preview.enabled = false;
                 nextPreviewCheck = 0;
                 if (IsDemolishing) SetDemolitionTarget(null);
+                if (IsRepairing) SetRepairTarget(null);
                 return;
             }
             if (IsDemolishing) { UpdateDemolition(); return; }
+            if (IsRepairing) { UpdateRepair(); return; }
             Vector2 cell = construction.Settings.Snap(worldCamera.ScreenToWorldPoint(input.Pointer));
             if (cell != lastCell || Time.time >= nextPreviewCheck || !preview.enabled)
             {
@@ -125,7 +141,9 @@ namespace ProjectF.Construction
         private void SetDemolitionTarget(WallStructure target)
         {
             var state = construction.ValidateDemolition(target);
-            bool changed = DemolitionTarget != target || DemolitionStatus != state;
+            int health = target != null ? target.Health : 0, refund = target != null ? target.RefundWood : 0;
+            bool changed = DemolitionTarget != target || DemolitionStatus != state || lastTargetHealth != health || lastTargetRefund != refund;
+            lastTargetHealth = health; lastTargetRefund = refund;
             DemolitionTarget = target;
             DemolitionStatus = state;
             preview.enabled = target != null;
@@ -134,6 +152,36 @@ namespace ProjectF.Construction
                 preview.transform.position = target.transform.position + new Vector3(0, 0, -.4f);
                 preview.transform.localScale = new Vector3(construction.Footprint.x, construction.Footprint.y, 1);
                 properties.SetColor(colorId, state == DemolitionResult.Available ? new Color(1f, .65f, .15f) : new Color(.95f, .25f, .25f));
+                preview.SetPropertyBlock(properties);
+            }
+            if (changed) Changed?.Invoke();
+        }
+        private void UpdateRepair()
+        {
+            Vector2 point = worldCamera.ScreenToWorldPoint(input.Pointer);
+            if (point == lastDemolitionPoint && Time.time < nextPreviewCheck && !input.SelectPressed) return;
+            lastDemolitionPoint = point; nextPreviewCheck = Time.time + .1f;
+            var target = construction.FindDemolitionTarget(point);
+            SetRepairTarget(target);
+            if (input.SelectPressed && target != null)
+            {
+                construction.TryRepair(target);
+                SetRepairTarget(construction.FindDemolitionTarget(point));
+            }
+        }
+        private void SetRepairTarget(WallStructure target)
+        {
+            var state = construction.ValidateRepair(target, out int cost);
+            int health = target != null ? target.Health : 0;
+            bool changed = RepairTarget != target || RepairStatus != state || RepairCost != cost || lastTargetHealth != health;
+            RepairTarget = target; RepairStatus = state; RepairCost = cost; lastTargetHealth = health;
+            preview.enabled = target != null;
+            if (target != null)
+            {
+                preview.transform.position = target.transform.position + new Vector3(0, 0, -.4f);
+                preview.transform.localScale = new Vector3(construction.Footprint.x, construction.Footprint.y, 1);
+                properties.SetColor(colorId, state == RepairResult.Available ? new Color(.25f, .8f, 1f)
+                    : state == RepairResult.AlreadyHealthy ? new Color(.55f, .6f, .65f) : new Color(.95f, .25f, .25f));
                 preview.SetPropertyBlock(properties);
             }
             if (changed) Changed?.Invoke();
