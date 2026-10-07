@@ -5,10 +5,10 @@
 ## Project Summary
 
 - 프로젝트 루트: `C:/Unity/Proejct_F`
-- 현재 단계: 승인된 목재 채집 기반에 반복 침공·다음 차수 준비 통합
-- 현재 브랜치: `codex/invasion-rounds` (승인 후 main에서 분기)
+- 현재 단계: 승인된 반복 침공 기반에 준비 단계의 병력 충원 통합
+- 현재 브랜치: `codex/unit-recruitment` (승인 후 main에서 분기)
 - 마지막 분석: 2026-10-07 (Asia/Seoul)
-- 기준 커밋: `e5e4642` (목재 채집 main 병합) + 이번 반복 침공 작업. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
+- 기준 커밋: `fc016ca` (반복 침공 main 병합) + 이번 병력 충원 작업. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
 
 ## Confirmed Environment
 
@@ -35,11 +35,11 @@
 | `Assets/ProjectF/Runtime/Input` | 마우스 입력, 선택, 이동 명령 | Confirmed | `CommandInput.cs`, `UnitCommandController.cs` |
 | `Assets/ProjectF/Runtime/Camera` | 휠 줌, 가운데 버튼 패닝, 지도 경계 제한 | Confirmed | `StrategyCamera2D.cs` |
 | `Assets/ProjectF/Runtime/Player` | 유닛 상태, 2D 격자, 협력형 A*, 시공간 예약, 이동 총괄 | Confirmed | 해당 폴더의 6개 런타임 스크립트 |
-| `Assets/ProjectF/Runtime/Combat` | 전투·AI 설정, 체력·공격, 적 자율 교전·복귀, 시각 피드백 | Confirmed | `UnitCombat`, `EnemyCombatAI`, 설정과 표시 컴포넌트 |
+| `Assets/ProjectF/Runtime/Combat` | 전투·AI·병력 충원 설정, 체력·공격·훈련, 시각 피드백 | Confirmed | `UnitCombat`, `EnemyCombatAI`, `UnitRecruitment`, 설정과 표시 컴포넌트 |
 | `Assets/ProjectF/Runtime/Invasion` | 침공 차수·생성·승패·다음 준비와 HUD | Confirmed | `PortalInvasion`, `InvasionSettings`, `InvasionHUD` |
 | `Assets/ProjectF/Runtime/Construction` | 건설·철거 규칙, 비용·환급, 입력·대상 표시, 벽의 길찾기 반영, HUD | Confirmed | 건설 컴포넌트와 설정 |
 | `Assets/ProjectF/Runtime/Economy` | 목재 재고·유한 자원·채집 명령과 표시 | Confirmed | `EstateStockpile`, `WoodResourceNode`, `WoodGatherer`, 설정·표시 컴포넌트 |
-| `Assets/ProjectF/Prefabs` | 비활성 상태로 생성하고 길찾기 연결 후 활성화하는 몬스터 | Confirmed | `PortalRaider.prefab` |
+| `Assets/ProjectF/Prefabs` | 비활성 상태로 생성하고 씬 의존성을 연결한 뒤 활성화하는 몬스터·아군·벽 | Confirmed | `PortalRaider`, `PlayerSoldier`, `PalisadeWall` |
 | `Assets/ProjectF/Editor` | 씬 생성/열기, 적 AI 통합, 설정 에셋 선택 메뉴 | Confirmed | `InputCameraSceneSetup`, `CombatSceneSetup`, `EnemyAISetup` |
 | `Assets/ProjectF/Tests/PlayMode` | 실제 씬과 가상 입력을 이용한 자동 검사 | Confirmed | `MouseCommandTests.cs`, `NavigationTests.cs` |
 | `Assets/ProjectF/Scenes` | 플레이 씬 `BasicCombat`, 기존 이동 검사 씬 `InputCamera` | Confirmed | 두 씬과 빌드 설정 |
@@ -61,6 +61,8 @@
 - 빌드 씬 2: `Assets/Scenes/SampleScene.unity` (활성, 테스트 종료 시 사용)
 - 초기 아군 4명·목재 80. `Project F → Open Gameplay`로 열기. 채집·건설(10/칸) → START INVASION → 3초 준비 → 1.5초 간격 생성 → 격퇴 → NEXT ROUND → 다음 준비. 기본 3차(3명→4명→5명), 최종 승리·패배·취소 후 RESTART.
 - 다음 차수 준비에서 아군 체력·사망·위치, 목재·나무 잔량, 벽·체력을 유지하며 채집·건설·철거를 재개. 첫 시작에 차수 수·기본 병력·증가량 확정. 자동 회복·부활·보상·나무 재생 없음.
+- TRAIN SOLDIER: 목재 20 선결제·준비 시간 5초 후 훈련소 출구에 아군 한 명 배치. 초기 아군 포함 생존 8명 상한, 훈련 슬롯 하나. 침공·결과·일시정지에서는 진행을 보관하고 다음 준비에서 재개. 수동 취소·환불 없음.
+- 충원 병사는 선택·이동·공격·채집 가능. `PortalInvasion`에 방어 병력으로 등록하므로 초기 아군이 전멸해도 충원 병사가 살아 있으면 전투 지속. 막힌 출구·배치 시 상한은 대기 후 재검사.
 - 침공 전 REMOVE WALL로 직접 지은 벽 철거·환급 가능. 기본 환급률 100%, 건설 시 벽마다 환급액을 확정. 건설·철거 모두 우클릭/Esc 취소, 침공 시작 후 잠금.
 - 벽 기본 체력 60과 메시 체력바. 진격 중인 적이 전방의 가까운 벽을 공격하면 BREAK WALL, 파괴 후 진격 재개. 전투 파괴에는 환급 없음.
 - 영지 왼쪽 위 나무 3곳(각 40). 준비 상태에서 아군 선택 후 나무 우클릭으로 접근·2초마다 목재 5 획득. 이동·공격·침공 시작 시 취소. 소진 시 그루터기만 남고 충돌 제거. 전용 일꾼·운반·저장은 아직 없음.
@@ -84,6 +86,7 @@
 | Demolition | 같은 `WallConstruction`이 소유 벽 검증·철거·환급을 처리. `WallStructure`에 환급액 보관, 비활성화로 충돌 즉시 제거. 입력 도구는 None/Build/Demolish 단일 모드 | Confirmed | 건설 런타임과 `DemolitionTests` |
 | Wall combat | `WallStructure`가 체력과 파괴 소유. `UnitCombat.WallTarget`은 유닛 대상과 배타적이며 공격 주기 공유. AI Breaching 상태가 전방 벽 선택·실패 시 대기·진격 재개를 담당 | Confirmed | `WallStructure`, `UnitCombat`, `EnemyCombatAI`, `WallHealthView` |
 | Wood gathering | `WoodResourceNode`의 유한 잔량을 `WoodGatherer`가 기존 재고로 이전. 접근·시야·작업 시간 검사, 명령 이벤트로 취소. 상태·잔량 이벤트로 표시 갱신 | Confirmed | `Runtime/Economy`, `UnitCommandController`, `UnitCombat.AttackCommandIssued` |
+| Recruitment | `UnitRecruitment`이 결제·훈련 슬롯·시간·충원 병력 생성과 사망 정리 소유. 비활성 프리팹에 길찾기·영지를 연결하고 활성화 후 침공 방어 병력 등록. HUD는 표시·버튼 담당 | Confirmed | `UnitRecruitment`, `RecruitmentHUD`, `RecruitmentSettings`, `RecruitmentSetup` |
 | Modal pointer ownership | 건설 입력이 소유자별 차단 API로 월드 클릭을 점유. 취소 후 버튼을 뗄 때까지 기존 명령 차단 | Confirmed | `UnitCommandController.SetPointerCommandsBlocked`, `WallPlacementController` |
 | Local perception | 2D 물리 영역 조회와 재사용 목록, 기본 0.25초 판단, 첫 탐지 시점 분산, 프로파일러 `ProjectF.EnemyAI.Detect` | Confirmed | `EnemyCombatAI.FindTarget` |
 | Central cooperative planning | `NavigationWorld2D`가 모든 유닛을 한 번에 우선순위별 계획하고 예약 | Confirmed | `NavigationWorld2D.cs` |
@@ -104,9 +107,11 @@
 ## Testing And Validation
 
 - EditMode 테스트: 없음
-- 2026-10-07 반복 침공 전체 133개 통과, 실패·건너뜀 0개, 199.44초. 새 반복 침공 10개 포함. 실제 기본 설정 3차 격퇴·중간 준비·체력과 자원 유지 확인. `Docs/Features/InvasionRounds.md` 참조. 사용자 최종 확인 대기.
+- 2026-10-07 병력 충원 전체 145개 통과, 실패·건너뜀 0개, 209.62초. 실제 기본 설정의 5초 훈련·목재 차감·아군 생성과 화면 확인. 새 병사의 입력·전투·채집·적 AI 탐지·승패 참여는 자동 검사로 검증. `Docs/Features/UnitRecruitment.md` 참조. 사용자 최종 확인 대기.
+- 병력 충원 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건, 14.569초, 132,846,242바이트. `Builds/UnitRecruitment/ProjectF_UnitRecruitment.exe`의 화면 없는 시작 검사 통과, 시작 로그 오류·예외 없음.
+- 2026-10-07 반복 침공 전체 133개 통과, 실패·건너뜀 0개, 199.44초. 새 반복 침공 10개 포함. 실제 기본 설정 3차 격퇴·중간 준비·체력과 자원 유지 확인. `Docs/Features/InvasionRounds.md` 참조. 승인 후 main 병합 완료 (`fc016ca`).
 - 반복 침공 Windows x64 빌드 성공, 오류 0개·기존 경고 501개, 15.306초, 132,828,770바이트. `Builds/InvasionRounds/ProjectF_InvasionRounds.exe`의 화면 없는 시작 검사 통과, 시작 로그 오류·예외 없음.
-- PlayMode 테스트: 이동·카메라 29개 + 기본 전투 14개 + 적 AI 13개 + 침공 12개 + 건설 12개 + 철거 13개 + 벽 전투 15개 + 목재 채집 15개 + 반복 침공 10개
+- PlayMode 테스트: 이동·카메라 29개 + 기본 전투 14개 + 적 AI 13개 + 침공 12개 + 건설 12개 + 철거 13개 + 벽 전투 15개 + 목재 채집 15개 + 반복 침공 10개 + 병력 충원 12개
 - 2026-10-06 목재 채집 최종 전체 123개 통과, 실패·건너뜀 0개, 199.91초. 실제 기본 설정의 자원 증가·소진·추가 건설·침공 취소 확인. `Docs/Features/WoodGathering.md` 참조. 승인 후 main 병합 완료 (`e5e4642`).
 - 목재 채집 Windows x64 빌드 성공, 오류 0개·기존 경고 501개, 24.410초, 132,827,202바이트. `Builds/WoodGathering/ProjectF_WoodGathering.exe` 시작 검사에서 엔진·입력 초기화와 프로세스 유지, 시작 로그 오류·예외 없음 확인.
 - 기본 전투 테스트는 적 AI를 꺼서 수동 공격 규칙을 분리 검증. 적 AI 테스트는 실제 씬에 연결된 AI를 켜고 검증
@@ -136,9 +141,10 @@
 
 ## Important Constraints
 
-- 현재 결과물은 이동·선택·카메라·충돌 회피·근접 전투·적 AI·반복 포탈 침공·방어벽 건설·철거·체력·파괴·목재 채집이 연결된 초기 플레이 버전이다.
+- 현재 결과물은 이동·선택·카메라·충돌 회피·근접 전투·적 AI·반복 포탈 침공·방어벽 건설·철거·체력·파괴·목재 채집·기본 병력 충원이 연결된 초기 플레이 버전이다.
 - 기본 근접 공격과 Player/Hostile/Neutral 진영, 방어벽 건설·철거·체력·적의 근접 벽 공격, 준비 단계 목재 채집을 추가했다. 전용 일꾼·운반·생산 시설, 공성 장비·최적 돌파 경로·수리, 외교 관계, 영웅/병과 규칙, 저장, 메인 메뉴, 편대 유지, Shift 추가 선택/명령 예약은 아직 없다.
 - 유닛은 스프라이트가 아니라 런타임 메시와 단색 URP Unlit 재질을 조합한 임시 도형이다.
+- 병력 충원은 고정 훈련소·기본 병사·임시 목재 비용으로 구현했다. 병영 건설·식량·인구·금화·영웅별 지휘력은 아직 없다. 현재 생존 아군 상한은 영웅 지휘력 규칙이 아니다.
 - `InputCameraSceneSetup.ConfigureMouseControls()`는 기존 씬을 업그레이드하지만 호출 자체가 자동 저장을 보장하지 않는다.
 - 입력은 `Assets/Settings/InputSystem_Actions.inputactions`를 직접 쓰지 않고 `CommandInput`이 마우스 액션을 코드로 생성한다.
 - 현재 이동 예측은 0.1초 간격 × 60단계 = 6초이며, 기본 0.5초마다 재계산한다.

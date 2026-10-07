@@ -18,6 +18,7 @@ namespace ProjectF.Invasion
         [SerializeField] private Transform destination;
         [SerializeField] private UnitCombat[] defenders;
         private readonly List<UnitCombat> members = new List<UnitCombat>(8);
+        private readonly List<UnitCombat> reinforcements = new List<UnitCombat>(8);
         private readonly List<Collider2D> overlaps = new List<Collider2D>(16);
         private readonly ContactFilter2D filter = new ContactFilter2D { useTriggers = false };
         private float nextSpawn, nextMemberCheck;
@@ -36,6 +37,26 @@ namespace ProjectF.Invasion
         public bool ExitBlocked { get; private set; }
         public float PreparationRemaining => State == InvasionState.Preparing ? Mathf.Max(0, nextSpawn - Time.time) : 0;
         public IReadOnlyList<UnitCombat> Members => members;
+        public int DefenderCount
+        {
+            get
+            {
+                int count = 0;
+                if (defenders != null) foreach (var defender in defenders) if (defender != null && defender.IsAlive) count++;
+                foreach (var defender in reinforcements) if (defender != null && defender.IsAlive) count++;
+                return count;
+            }
+        }
+        internal void RegisterDefender(UnitCombat defender)
+        {
+            if (defender == null || !defender.IsAlive || defender.Faction != UnitFaction.Player || defender.gameObject.scene != gameObject.scene)
+                throw new ArgumentException("Only a live allied unit in this scene can join the defense.", nameof(defender));
+            if (Array.IndexOf(defenders, defender) >= 0 || reinforcements.Contains(defender)) return;
+            for (int i = reinforcements.Count - 1; i >= 0; i--)
+                if (reinforcements[i] == null || !reinforcements[i].IsAlive) reinforcements.RemoveAt(i);
+            reinforcements.Add(defender);
+            Changed?.Invoke();
+        }
 
         private void Start()
         {
@@ -116,11 +137,7 @@ namespace ProjectF.Invasion
 
         private bool IsFinished => State == InvasionState.Repelled || State == InvasionState.Defeated || State == InvasionState.Cancelled;
 
-        private bool HasDefenders()
-        {
-            foreach (var defender in defenders) if (defender != null && defender.IsAlive) return true;
-            return false;
-        }
+        private bool HasDefenders() => DefenderCount > 0;
 
         private bool TrySpawn()
         {

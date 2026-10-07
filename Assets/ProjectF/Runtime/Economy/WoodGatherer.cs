@@ -27,6 +27,12 @@ namespace ProjectF.Economy
         public bool CanGather => isActiveAndEnabled && settings != null && stockpile != null && stockpile.isActiveAndEnabled
             && invasion != null && invasion.isActiveAndEnabled && invasion.State == InvasionState.Ready && combat.IsPlayerControlled;
 
+        public void InitializeEstate(EstateStockpile estate, PortalInvasion director)
+        {
+            if (gameObject.activeInHierarchy) throw new System.InvalidOperationException("Bind estate before activating a spawned gatherer.");
+            stockpile = estate != null ? estate : throw new System.ArgumentNullException(nameof(estate));
+            invasion = director != null ? director : throw new System.ArgumentNullException(nameof(director));
+        }
         private void Awake() { unit = GetComponent<CommandableUnit>(); combat = GetComponent<UnitCombat>(); }
         private void OnEnable()
         {
