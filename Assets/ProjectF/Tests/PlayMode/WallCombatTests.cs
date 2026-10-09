@@ -24,6 +24,7 @@ namespace ProjectF.Tests
         private NavigationWorld2D navigation;
         private UnitCombat enemy, ally;
         private EnemyCombatAI ai;
+        private float advanceThinkDelay = -1;
         private readonly List<ScriptableObject> temporarySettings = new List<ScriptableObject>();
 
         [UnitySetUp]
@@ -54,6 +55,7 @@ namespace ProjectF.Tests
             yield return SceneManager.LoadSceneAsync("SampleScene");
             foreach (var settings in temporarySettings) Object.Destroy(settings);
             temporarySettings.Clear();
+            advanceThinkDelay = -1;
         }
         private static T GetField<T>(object target, string name) => (T)target.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).GetValue(target);
         private static void SetField(object target, string name, object value) => target.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).SetValue(target, value);
@@ -77,12 +79,17 @@ namespace ProjectF.Tests
         {
             float until = Time.time + seconds;
             while (!condition() && Time.time < until) yield return new WaitForFixedUpdate();
-            Assert.That(condition(), Is.True, message);
+            if (!condition())
+                Assert.Fail(message + (enemy == null ? " Enemy was destroyed." : " AI=" + ai.State + " position=" + enemy.Unit.Position
+                    + " destination=" + enemy.Unit.Destination + " travel=" + enemy.Unit.TravelState
+                    + " wall=" + (enemy.WallTarget != null ? enemy.WallTarget.transform.position.ToString() : "none"))
+                    + " time=" + Time.time + " fixed=" + Time.fixedDeltaTime);
         }
         private void StartAdvance(Vector2 destination)
         {
             ai.enabled = true;
             Assert.That(ai.AdvanceTo(destination), Is.True);
+            if (advanceThinkDelay >= 0) SetField(ai, "nextThink", Time.time + advanceThinkDelay);
         }
 
         [UnityTest]
@@ -218,7 +225,23 @@ namespace ProjectF.Tests
             Assert.That(enemy.transform.Find("AI Status").GetComponent<TextMesh>().text, Is.EqualTo("BREAK WALL"));
             yield return Until(() => wall == null, "Wall was not destroyed.");
             Assert.That(stockpile.Wood, Is.EqualTo(30));
-            yield return Until(() => ai.State == EnemyAIState.Guarding && enemy.Unit.Position.x < -5.5f, "Advance did not resume through the breach.");
+            float tolerance = GetField<EnemyAISettings>(ai, "settings").ReturnTolerance;
+            // AI may stop inside its configured arrival radius before the planner reaches the exact point.
+            yield return Until(() => ai.State == EnemyAIState.Guarding
+                && Vector2.Distance(enemy.Unit.Position, new Vector2(-6, 0)) <= tolerance,
+                "Advance did not resume through the breach.");
+        }
+
+        [UnityTest]
+        public IEnumerator WallBreachResumesWithinConfiguredArrivalToleranceAcrossThinkPhases()
+        {
+            for (int phase = 0; phase <= 12; phase++)
+            {
+                if (phase > 0) { yield return TearDown(); yield return SetUp(); }
+                advanceThinkDelay = phase * .02f;
+                yield return AdvancingEnemyBreaksForwardWallAndResumesOriginalDestination();
+            }
+            advanceThinkDelay = -1;
         }
 
         [UnityTest]
