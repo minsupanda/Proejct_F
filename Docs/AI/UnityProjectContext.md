@@ -5,10 +5,10 @@
 ## Project Summary
 
 - 프로젝트 루트: `C:/Unity/Proejct_F`
-- 현재 단계: 승인된 병력 충원 기반에 방어벽 수리·손상 비례 환급 통합
-- 현재 브랜치: `codex/wall-repair` (승인 후 main에서 분기)
-- 마지막 분석: 2026-10-07 (Asia/Seoul)
-- 기준 커밋: `09c0d14` (병력 충원 main 병합) + 이번 방어벽 수리 작업. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
+- 현재 단계: 승인된 방어벽 수리 기반에 훈련소 집결 지점 통합
+- 현재 브랜치: `codex/recruitment-rally` (승인 후 main에서 분기)
+- 마지막 분석: 2026-10-09 (Asia/Seoul)
+- 기준 커밋: `b8ad011` (방어벽 수리 main 병합) + 이번 집결 지점 작업. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
 
 ## Confirmed Environment
 
@@ -62,6 +62,7 @@
 - 초기 아군 4명·목재 80. `Project F → Open Gameplay`로 열기. 채집·건설(10/칸) → START INVASION → 3초 준비 → 1.5초 간격 생성 → 격퇴 → NEXT ROUND → 다음 준비. 기본 3차(3명→4명→5명), 최종 승리·패배·취소 후 RESTART.
 - 다음 차수 준비에서 아군 체력·사망·위치, 목재·나무 잔량, 벽·체력을 유지하며 채집·건설·철거·수리를 재개. 첫 시작에 차수 수·기본 병력·증가량 확정. 자동 회복·부활·보상·나무 재생 없음.
 - TRAIN SOLDIER: 목재 20 선결제·준비 시간 5초 후 훈련소 출구에 아군 한 명 배치. 초기 아군 포함 생존 8명 상한, 훈련 슬롯 하나. 침공·결과·일시정지에서는 진행을 보관하고 다음 준비에서 재개. 수동 취소·환불 없음.
+- SET RALLY → 빈 땅 클릭으로 준비 단계의 집결 지점 지정, CLEAR RALLY로 해제. 배치 시점의 지점으로 새 병사에게 이동 명령을 한 번 부여. 이미 나온 병사의 명령은 유지. 다음 차수까지 보관하고 재시작 시 초기화. 목적지 주변의 지형은 검사하지만 전체 경로 연결은 보장하지 않음.
 - 충원 병사는 선택·이동·공격·채집 가능. `PortalInvasion`에 방어 병력으로 등록하므로 초기 아군이 전멸해도 충원 병사가 살아 있으면 전투 지속. 막힌 출구·배치 시 상한은 대기 후 재검사.
 - 침공 전 REMOVE WALL로 직접 지은 벽 철거·환급 가능. 온전한 벽의 기본 환급률 100%. 구매 시 최대 환급액을 보관하고 실제 환급은 남은 체력 비율을 곱해 내림. 건설·철거·수리 모두 우클릭/Esc 취소, 침공 시작 후 잠금.
 - REPAIR WALL: 준비 단계에서 손상된 소유 벽을 좌클릭하면 구매 비용 × 손상 비율을 올림한 목재를 내고 즉시 완전 수리. 기본 30/60 벽은 5목재. 구매 비용·최대 체력·최대 환급액은 건설 당시 값 유지. 작업자·수리 시간·전투 중 수리는 없음.
@@ -89,6 +90,7 @@
 | Wall combat | `WallStructure`가 체력과 파괴 소유. `UnitCombat.WallTarget`은 유닛 대상과 배타적이며 공격 주기 공유. AI Breaching 상태가 전방 벽 선택·실패 시 대기·진격 재개를 담당 | Confirmed | `WallStructure`, `UnitCombat`, `EnemyCombatAI`, `WallHealthView` |
 | Wood gathering | `WoodResourceNode`의 유한 잔량을 `WoodGatherer`가 기존 재고로 이전. 접근·시야·작업 시간 검사, 명령 이벤트로 취소. 상태·잔량 이벤트로 표시 갱신 | Confirmed | `Runtime/Economy`, `UnitCommandController`, `UnitCombat.AttackCommandIssued` |
 | Recruitment | `UnitRecruitment`이 결제·훈련 슬롯·시간·충원 병력 생성과 사망 정리 소유. 비활성 프리팹에 길찾기·영지를 연결하고 활성화 후 침공 방어 병력 등록. HUD는 표시·버튼 담당 | Confirmed | `UnitRecruitment`, `RecruitmentHUD`, `RecruitmentSettings`, `RecruitmentSetup` |
+| Recruitment rally | `UnitRecruitment`이 지점·검증·배치 시 이동을 소유. 입력·깃발은 `RecruitmentRallyController`, 버튼·안내는 `RecruitmentRallyHUD`. 기존 길찾기·포인터 점유 재사용, 건설 상태 이벤트로 도구 전환 | Confirmed | `RecruitmentRallyTests`, `RecruitmentRallySetup` |
 | Modal pointer ownership | 건설 입력이 소유자별 차단 API로 월드 클릭을 점유. 취소 후 버튼을 뗄 때까지 기존 명령 차단 | Confirmed | `UnitCommandController.SetPointerCommandsBlocked`, `WallPlacementController` |
 | Local perception | 2D 물리 영역 조회와 재사용 목록, 기본 0.25초 판단, 첫 탐지 시점 분산, 프로파일러 `ProjectF.EnemyAI.Detect` | Confirmed | `EnemyCombatAI.FindTarget` |
 | Central cooperative planning | `NavigationWorld2D`가 모든 유닛을 한 번에 우선순위별 계획하고 예약 | Confirmed | `NavigationWorld2D.cs` |
@@ -109,13 +111,16 @@
 ## Testing And Validation
 
 - EditMode 테스트: 없음
-- 2026-10-07 방어벽 수리 전체 159개 통과, 실패·건너뜀 0개, 211.62초. 새 수리 14개 포함. 실제 기본 설정 Play에서 검증용 피해로 만든 체력 30/60 벽을 클릭해 체력 60·목재 70→65 확인. `Docs/Features/WallRepair.md` 참조. 사용자 최종 확인 대기.
+- 2026-10-07 방어벽 수리 전체 159개 통과, 실패·건너뜀 0개, 211.62초. 새 수리 14개 포함. 실제 기본 설정 Play에서 검증용 피해로 만든 체력 30/60 벽을 클릭해 체력 60·목재 70→65 확인. `Docs/Features/WallRepair.md` 참조. 승인 후 main 병합 완료 (`b8ad011`).
 - 방어벽 수리 Windows x64 빌드 성공, 오류 0개·기존 경고 501건, 12.343초, 132,850,658바이트. `Builds/WallRepair/ProjectF_WallRepair.exe`의 화면 없는 시작 검사 통과, 시작 로그 오류·예외 없음.
 - 2026-10-07 병력 충원 전체 145개 통과, 실패·건너뜀 0개, 209.62초. 실제 기본 설정의 5초 훈련·목재 차감·아군 생성과 화면 확인. 새 병사의 입력·전투·채집·적 AI 탐지·승패 참여는 자동 검사로 검증. `Docs/Features/UnitRecruitment.md` 참조. 승인 후 main 병합 완료 (`09c0d14`).
 - 병력 충원 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건, 14.569초, 132,846,242바이트. `Builds/UnitRecruitment/ProjectF_UnitRecruitment.exe`의 화면 없는 시작 검사 통과, 시작 로그 오류·예외 없음.
 - 2026-10-07 반복 침공 전체 133개 통과, 실패·건너뜀 0개, 199.44초. 새 반복 침공 10개 포함. 실제 기본 설정 3차 격퇴·중간 준비·체력과 자원 유지 확인. `Docs/Features/InvasionRounds.md` 참조. 승인 후 main 병합 완료 (`fc016ca`).
 - 반복 침공 Windows x64 빌드 성공, 오류 0개·기존 경고 501개, 15.306초, 132,828,770바이트. `Builds/InvasionRounds/ProjectF_InvasionRounds.exe`의 화면 없는 시작 검사 통과, 시작 로그 오류·예외 없음.
-- PlayMode 테스트: 이동·카메라 29개 + 기본 전투 14개 + 적 AI 13개 + 침공 12개 + 건설 12개 + 철거 13개 + 벽 전투 15개 + 목재 채집 15개 + 반복 침공 10개 + 병력 충원 12개 + 벽 수리 14개
+- 훈련소 집결 최종 전체 PlayMode 174개 통과, 실패·건너뜀 0개, 259.86초. 전용 14개와 벽 돌파 판단 시점 회귀 1개를 추가했다. 실제 기본 설정 Play에서 클릭·훈련·깃발 도착을 확인했다. 사용자 승인 대기이며 `Docs/Features/RecruitmentRally.md` 참조.
+- 2026-10-09 집결 Windows x64 빌드 성공, 오류 0개·이전 빌드와 같은 경고 유형 501건, 29.506초, 132,860,882바이트. `Builds/RecruitmentRally/ProjectF_RecruitmentRally.exe` 시작 검사 통과, 시작 로그 오류·예외 없음. BasicCombat 저장·Play 중지, 누락 스크립트·집결 참조 0개, EventSystem 1개.
+- PlayMode 테스트: 이동·카메라 29개 + 기본 전투 14개 + 적 AI 13개 + 침공 12개 + 건설 12개 + 철거 13개 + 벽 전투 16개 + 목재 채집 15개 + 반복 침공 10개 + 병력 충원 12개 + 벽 수리 14개 + 집결 지점 14개
+- 벽 돌파의 도착 검사는 AI 설정 `ReturnTolerance`를 사용한다. 이전 고정 `x < -5.5` 조건은 기본 허용 거리 0.6과 맞지 않아 정상 Guarding에서도 간헐적으로 실패했다. 집결 통합 과정에서 바로잡고 판단 시점 13가지를 검사하는 회귀 사례를 추가했다. 전투 런타임 변경 없음.
 - 2026-10-06 목재 채집 최종 전체 123개 통과, 실패·건너뜀 0개, 199.91초. 실제 기본 설정의 자원 증가·소진·추가 건설·침공 취소 확인. `Docs/Features/WoodGathering.md` 참조. 승인 후 main 병합 완료 (`e5e4642`).
 - 목재 채집 Windows x64 빌드 성공, 오류 0개·기존 경고 501개, 24.410초, 132,827,202바이트. `Builds/WoodGathering/ProjectF_WoodGathering.exe` 시작 검사에서 엔진·입력 초기화와 프로세스 유지, 시작 로그 오류·예외 없음 확인.
 - 기본 전투 테스트는 적 AI를 꺼서 수동 공격 규칙을 분리 검증. 적 AI 테스트는 실제 씬에 연결된 AI를 켜고 검증
@@ -145,7 +150,7 @@
 
 ## Important Constraints
 
-- 현재 결과물은 이동·선택·카메라·충돌 회피·근접 전투·적 AI·반복 포탈 침공·방어벽 건설·철거·체력·파괴·목재 채집·기본 병력 충원·방어벽 수리가 연결된 초기 플레이 버전이다.
+- 현재 결과물은 이동·선택·카메라·충돌 회피·근접 전투·적 AI·반복 포탈 침공·방어벽 건설·철거·체력·파괴·목재 채집·기본 병력 충원·방어벽 수리·훈련소 집결 지점이 연결된 초기 플레이 버전이다.
 - 기본 근접 공격과 Player/Hostile/Neutral 진영, 방어벽 건설·철거·체력·적의 근접 벽 공격, 준비 단계 목재 채집을 추가했다. 전용 일꾼·운반·생산 시설, 공성 장비·최적 돌파 경로·작업자 수리, 외교 관계, 영웅/병과 규칙, 저장, 메인 메뉴, 편대 유지, Shift 추가 선택/명령 예약은 아직 없다.
 - 유닛은 스프라이트가 아니라 런타임 메시와 단색 URP Unlit 재질을 조합한 임시 도형이다.
 - 병력 충원은 고정 훈련소·기본 병사·임시 목재 비용으로 구현했다. 병영 건설·식량·인구·금화·영웅별 지휘력은 아직 없다. 현재 생존 아군 상한은 영웅 지휘력 규칙이 아니다.

@@ -8,6 +8,7 @@ using UnityEngine;
 namespace ProjectF.Combat
 {
     public enum RecruitmentState { Idle, Training, Suspended, ExitBlocked, AtCapacity }
+    public enum RallyPointResult { Available, Unavailable, OutsideMap, Blocked }
 
     /// <summary>One paid training slot. Scene dependencies are bound before a recruit is activated.</summary>
     public sealed class UnitRecruitment : MonoBehaviour
@@ -29,6 +30,8 @@ namespace ProjectF.Combat
         public RecruitmentState State { get; private set; }
         public bool IsTraining { get; private set; }
         public float RemainingSeconds { get; private set; }
+        public bool HasRallyPoint { get; private set; }
+        public Vector2 RallyPoint { get; private set; }
         public int AlliedCount => invasion != null ? invasion.DefenderCount : 0;
         public bool PreparationAvailable => initialized && isActiveAndEnabled && invasion != null
             && invasion.isActiveAndEnabled && invasion.State == InvasionState.Ready && Time.timeScale > 0;
@@ -39,6 +42,7 @@ namespace ProjectF.Combat
         {
             if (invasion != null) invasion.Changed += OnContextChanged;
             if (stockpile != null) stockpile.Changed += OnContextChanged;
+            if (initialized) OnContextChanged();
         }
         private void OnDisable()
         {
@@ -72,6 +76,44 @@ namespace ProjectF.Combat
             OnContextChanged();
             return paid;
         }
+        public RallyPointResult ValidateRallyPoint(Vector2 point)
+        {
+            if (!PreparationAvailable || !navigation.isActiveAndEnabled) return RallyPointResult.Unavailable;
+            float radius = SoldierRadius;
+            Rect bounds = navigation.MovementBounds;
+            if (!float.IsFinite(point.x) || !float.IsFinite(point.y)
+                || point.x < bounds.xMin + radius || point.x > bounds.xMax - radius
+                || point.y < bounds.yMin + radius || point.y > bounds.yMax - radius)
+                return RallyPointResult.OutsideMap;
+            Physics2D.SyncTransforms();
+            int count = Physics2D.OverlapCircle(point, radius + .1f, filter, overlaps);
+            if (count == overlaps.Length) return RallyPointResult.Blocked;
+            // Units share a rally point; navigation assigns separate arrival positions.
+            for (int i = 0; i < count; i++)
+                if (overlaps[i].GetComponentInParent<CommandableUnit>() == null) return RallyPointResult.Blocked;
+            return RallyPointResult.Available;
+        }
+        public RallyPointResult TrySetRallyPoint(Vector2 point)
+        {
+            var result = ValidateRallyPoint(point);
+            if (result != RallyPointResult.Available) return result;
+            if (HasRallyPoint && RallyPoint == point) return result;
+            RallyPoint = point; HasRallyPoint = true; Changed?.Invoke();
+            return result;
+        }
+        public bool ClearRallyPoint()
+        {
+            if (!PreparationAvailable || !HasRallyPoint) return false;
+            HasRallyPoint = false; RallyPoint = Vector2.zero; Changed?.Invoke(); return true;
+        }
+        private float SoldierRadius
+        {
+            get
+            {
+                var circle = soldierPrefab.GetComponent<CircleCollider2D>();
+                return circle.radius * Mathf.Max(Mathf.Abs(soldierPrefab.transform.localScale.x), Mathf.Abs(soldierPrefab.transform.localScale.y));
+            }
+        }
         private void OnContextChanged()
         {
             if (IsTraining && !PreparationAvailable) State = RecruitmentState.Suspended;
@@ -101,8 +143,7 @@ namespace ProjectF.Combat
         }
         private bool TryDeploy()
         {
-            var circle = soldierPrefab.GetComponent<CircleCollider2D>();
-            float radius = circle.radius * Mathf.Max(Mathf.Abs(soldierPrefab.transform.localScale.x), Mathf.Abs(soldierPrefab.transform.localScale.y));
+            float radius = SoldierRadius;
             Physics2D.SyncTransforms();
             foreach (var exit in exits)
             {
@@ -114,6 +155,8 @@ namespace ProjectF.Combat
                 recruit.Died += RemoveDeadRecruits;
                 recruits.Add(recruit);
                 recruit.gameObject.SetActive(true);
+                // Issue once at deployment. Later edits affect only future recruits, never player orders.
+                if (HasRallyPoint) recruit.Unit.MoveTo(RallyPoint);
                 IsTraining = false; RemainingSeconds = 0; State = RecruitmentState.Idle;
                 invasion.RegisterDefender(recruit);
                 lastCount = AlliedCount;

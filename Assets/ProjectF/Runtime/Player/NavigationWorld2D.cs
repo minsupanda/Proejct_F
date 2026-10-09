@@ -33,6 +33,7 @@ namespace ProjectF.Player
         public int LastExpandedNodes { get; private set; }
         public int ReplanCount { get; private set; }
         public int SafetyStops { get; private set; }
+        public Rect MovementBounds => movementBounds;
 
         internal sealed class AgentPlan
         {
