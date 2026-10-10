@@ -5,6 +5,7 @@ Unity 6000.6.0f1 / 2D 전략 게임 프로토타입.
 ## 지금 확인할 기능
 
 Unity 상단 **Project F → Open Gameplay → Play**.
+**Shift + 좌클릭**으로 아군을 선택에 추가하거나 빼고, **Shift + 드래그**로 범위 안 아군을 추가합니다. 기존 병사의 명령은 유지되며, 일반 클릭·드래그는 선택을 교체합니다.
 **SET RALLY** → 빈 땅 좌클릭으로 훈련소 집결 지점을 지정합니다. 이후 훈련이 끝난 병사는 깃발로 이동합니다. **CLEAR RALLY**로 해제하며, 지정 중 우클릭/Esc는 취소입니다. 준비 단계에 설정할 수 있고 이미 나온 병사의 명령은 유지합니다.
 **TRAIN SOLDIER**로 목재 20을 소비하면 준비 시간 5초 후 왼쪽 훈련소에서 병사 한 명이 나옵니다. 기본 생존 아군 상한은 8명입니다. 새 병사도 선택·이동·공격·채집할 수 있습니다.
 한 번에 한 명씩 훈련하며, 침공 중에는 남은 시간을 보관했다가 다음 준비 단계에서 이어갑니다.
@@ -18,6 +19,7 @@ Unity 상단 **Project F → Open Gameplay → Play**.
 아군에게 직접 공격 명령을 내려 격퇴합니다. **NEXT ROUND**를 누르면 체력·목재·나무 잔량·벽을 유지하며 다음 침공을 준비합니다. 채집·건설·철거를 다시 하고 **START INVASION**으로 진행합니다.
 기본 **3차 침공(3명 → 4명 → 5명)**을 모두 막거나 패배하면 **RESTART**로 처음부터 다시 시작합니다.
 
+- [Shift 추가·해제 선택 사용법과 검증](Docs/Features/AdditiveSelection.md)
 - [훈련소 집결 지점 사용법과 검증](Docs/Features/RecruitmentRally.md)
 - [방어벽 수리·손상별 환급 사용법과 검증](Docs/Features/WallRepair.md)
 - [병력 충원 사용법과 검증](Docs/Features/UnitRecruitment.md)

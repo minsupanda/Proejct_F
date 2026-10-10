@@ -1,6 +1,6 @@
 # 훈련소 집결 지점
 
-상태: 구현·검증 완료, 사용자 확인 대기. 브랜치 `codex/recruitment-rally`, 승인된 방어벽 수리의 main 병합 `b8ad011`에서 분기했습니다. 사용자 확인 후 main에 병합합니다.
+상태: 사용자 승인·main 병합 완료. 구현 `43511fe`, main 병합 `aab0e15`. 브랜치 `codex/recruitment-rally`는 방어벽 수리의 main 병합 `b8ad011`에서 분기했습니다.
 
 ## 플레이 방법
 

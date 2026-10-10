@@ -16,6 +16,7 @@ namespace ProjectF.Input
         [SerializeField, Min(1)] private float dragThreshold = 8f;
         [SerializeField] private Rect movementBounds = new Rect(-23, -15, 46, 30);
         private readonly List<CommandableUnit> selected = new List<CommandableUnit>();
+        private readonly HashSet<CommandableUnit> selectedSet = new HashSet<CommandableUnit>();
         private readonly List<RaycastResult> uiHits = new List<RaycastResult>();
         private readonly List<CommandableUnit> selectable = new List<CommandableUnit>();
         private readonly Collider2D[] resourceHits = new Collider2D[16];
@@ -24,7 +25,7 @@ namespace ProjectF.Input
         private PointerEventData pointerData;
         private EventSystem pointerEventSystem;
         private Vector2 start;
-        private bool selecting, dragging;
+        private bool selecting, dragging, additiveSelection;
         private readonly HashSet<object> pointerOwners = new HashSet<object>();
         private bool waitForPointerRelease;
         public IReadOnlyList<CommandableUnit> Selected => selected;
@@ -60,6 +61,7 @@ namespace ProjectF.Input
                 if (!CanSelect(selected[i]))
                 {
                     if (selected[i] != null) selected[i].SetSelected(false);
+                    selectedSet.Remove(selected[i]);
                     selected.RemoveAt(i);
                 }
             if (pointerOwners.Count > 0 || waitForPointerRelease)
@@ -68,7 +70,7 @@ namespace ProjectF.Input
                 if (pointerOwners.Count == 0 && !input.SelectHeld && !input.CommandHeld) waitForPointerRelease = false;
                 return;
             }
-            if (!input.Ready || input.PanHeld)
+            if (!input.Ready || input.PanHeld || input.CancelPressed)
             {
                 CancelDrag();
                 return;
@@ -78,6 +80,8 @@ namespace ProjectF.Input
             if (input.SelectPressed && insideView && !PointerOverUI())
             {
                 start = pointer;
+                // Fix the gesture mode at mouse-down, so releasing Shift mid-drag is predictable.
+                additiveSelection = input.AdditiveSelectionHeld;
                 selecting = true;
             }
             if (selecting)
@@ -97,8 +101,7 @@ namespace ProjectF.Input
 
         private void Select(Vector2 end)
         {
-            foreach (var unit in selected) unit.SetSelected(false);
-            selected.Clear();
+            if (!additiveSelection) ClearSelection();
             Rect rect = Rect.MinMaxRect(Mathf.Min(start.x, end.x), Mathf.Min(start.y, end.y),
                 Mathf.Max(start.x, end.x), Mathf.Max(start.y, end.y));
             CommandableUnit closest = null;
@@ -120,10 +123,30 @@ namespace ProjectF.Input
                     if (distance < bestDistance) { closest = unit; bestDistance = distance; }
                 }
             }
-            if (!dragging && closest != null) AddSelected(closest);
+            if (!dragging && closest != null)
+            {
+                if (additiveSelection && selectedSet.Remove(closest))
+                {
+                    selected.Remove(closest);
+                    closest.SetSelected(false);
+                }
+                else AddSelected(closest);
+            }
         }
 
-        private void AddSelected(CommandableUnit unit) { selected.Add(unit); unit.SetSelected(true); }
+        private void AddSelected(CommandableUnit unit)
+        {
+            if (!selectedSet.Add(unit)) return;
+            selected.Add(unit);
+            unit.SetSelected(true);
+        }
+
+        private void ClearSelection()
+        {
+            foreach (var unit in selected) if (unit != null) unit.SetSelected(false);
+            selected.Clear();
+            selectedSet.Clear();
+        }
 
         private static bool CanSelect(CommandableUnit unit)
         {
@@ -185,15 +208,14 @@ namespace ProjectF.Input
 
         private void CancelDrag()
         {
-            selecting = dragging = false;
+            selecting = dragging = additiveSelection = false;
             if (selectionBox != null) selectionBox.gameObject.SetActive(false);
         }
 
         private void OnDisable()
         {
             CancelDrag();
-            foreach (var unit in selected) if (unit != null) unit.SetSelected(false);
-            selected.Clear();
+            ClearSelection();
         }
     }
 }
