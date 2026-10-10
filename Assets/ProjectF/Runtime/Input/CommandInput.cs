@@ -7,7 +7,7 @@ namespace ProjectF.Input
     public sealed class CommandInput : MonoBehaviour
     {
         private InputActionMap actions;
-        private InputAction point, select, command, pan, zoom, cancel;
+        private InputAction point, select, command, pan, zoom, cancel, additiveSelection;
         private bool focused = true;
 
         public bool Ready => isActiveAndEnabled && focused;
@@ -15,6 +15,7 @@ namespace ProjectF.Input
         public bool SelectPressed => Ready && select.WasPressedThisFrame();
         public bool SelectReleased => Ready && select.WasReleasedThisFrame();
         public bool SelectHeld => Ready && select.IsPressed();
+        public bool AdditiveSelectionHeld => Ready && additiveSelection.IsPressed();
         public bool CommandPressed => Ready && command.WasPressedThisFrame();
         public bool CommandHeld => Ready && command.IsPressed();
         public bool CancelPressed => Ready && cancel.WasPressedThisFrame();
@@ -30,6 +31,8 @@ namespace ProjectF.Input
             pan = actions.AddAction("Pan", InputActionType.Button, "<Mouse>/middleButton");
             zoom = actions.AddAction("Zoom", InputActionType.PassThrough, "<Mouse>/scroll");
             cancel = actions.AddAction("Cancel", InputActionType.Button, "<Keyboard>/escape");
+            additiveSelection = actions.AddAction("AdditiveSelection", InputActionType.Button, "<Keyboard>/leftShift");
+            additiveSelection.AddBinding("<Keyboard>/rightShift");
         }
 
         private void OnEnable() { if (focused) actions.Enable(); }

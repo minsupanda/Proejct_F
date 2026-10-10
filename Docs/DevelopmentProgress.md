@@ -26,7 +26,8 @@
 | 반복 침공·다음 차수 준비 | 사용자 승인 완료, main 병합 완료 | [InvasionRounds](Features/InvasionRounds.md) |
 | 준비 단계의 병력 충원 | 사용자 승인 완료, main 병합 완료 | [UnitRecruitment](Features/UnitRecruitment.md) |
 | 방어벽 수리·손상 비례 철거 환급 | 사용자 승인 완료, main 병합 완료 | [WallRepair](Features/WallRepair.md) |
-| 훈련소 집결 지점 | 구현·검증 완료, 사용자 확인 대기 | [RecruitmentRally](Features/RecruitmentRally.md) |
+| 훈련소 집결 지점 | 사용자 승인 완료, main 병합 완료 | [RecruitmentRally](Features/RecruitmentRally.md) |
+| Shift 추가·해제 선택 | 구현·검증 완료, 사용자 확인 대기 | [AdditiveSelection](Features/AdditiveSelection.md) |
 
 생산 시설·전용 일꾼·운반·공성 장비·작업자 수리, 영웅·병종·지휘력, 캠페인 침공 일정·포탈 성장, 정찰·지도, 외교·작위 등은 기획 단계입니다.
 
@@ -139,7 +140,7 @@
 - 사용법과 검증 결과는 `Docs/Features/WallRepair.md`에 기록합니다. 사용자 확인 후 main 병합과 다음 기능을 진행합니다.
 - 구현 `86ab609`, 사용자 다음 단계 진행 승인. main 병합 `b8ad011`, GitHub 반영 완료.
 
-## 이번 기능: 훈련소 집결 지점
+## 승인된 훈련소 집결 지점
 
 - 브랜치: `codex/recruitment-rally`, 승인된 main `b8ad011`에서 분기.
 - 준비 단계 SET RALLY → 빈 땅 클릭 → 이후 훈련이 끝난 병사는 집결 깃발로 이동합니다. CLEAR RALLY로 해제합니다.
@@ -150,3 +151,14 @@
 - 2026-10-09 Windows x64 빌드 성공, 오류 0개·기존 경고 501건. 독립 실행 파일 시작 검사 통과, 시작 로그 오류·예외 없음. 코드·씬·검사·사용법·화면을 함께 커밋하고 GitHub 기능 브랜치에 반영합니다.
 - 기존 전투 클릭 영역을 유지하도록 버튼을 훈련소 영역 안에 배치했습니다. 벽 돌파 검사의 잘못된 고정 도착 거리도 실제 AI 설정값에 맞추고 판단 시점 13가지의 회귀 검사를 추가했습니다. 전투 런타임은 변경하지 않았습니다.
 - 사용법·화면·검증 결과는 `Docs/Features/RecruitmentRally.md`에 기록합니다. 사용자 확인 후 이번 기능을 main에 병합하고 다음 기능으로 진행합니다.
+- 구현 `43511fe`, 사용자 다음 단계 진행 승인. main 병합 `aab0e15`, GitHub 반영 완료.
+
+## 이번 기능: Shift 추가·해제 선택
+
+- 브랜치: `codex/additive-selection`, 승인된 main `aab0e15`에서 분기.
+- Shift + 클릭은 아군 선택 추가·해제, Shift + 드래그는 범위 안 아군 추가입니다. 일반 선택은 교체하며 빈 땅 Shift 클릭은 선택을 유지합니다.
+- 드래그 시작 시 Shift 상태를 고정합니다. 기존 명령·입력 점유·UI 보호를 재사용하고 중복 선택은 HashSet으로 방지합니다.
+- 새 병사를 기존 선택에 합치거나 일부만 지휘하는 전술 조작을 추가합니다. 명령 예약·부대 저장은 후속 범위입니다.
+- 전용 검사 12개와 기존 174개를 포함해 최종 전체 PlayMode 186개 통과, 실패·건너뜀 0개, 257.65초. 실제 Play의 Shift 클릭으로 선택 1→3→2명과 선택 원 갱신을 확인했습니다.
+- 2026-10-11 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건. 실행 파일 시작 검사 통과, 시작 로그 오류·예외 없음. 기본 씬의 누락 스크립트·선택 참조 0개. 기능 브랜치에 코드·검사·씬·사용법·화면을 함께 커밋·푸시합니다.
+- 사용법과 검증은 `Docs/Features/AdditiveSelection.md`에 기록합니다. 구현·검증·커밋·푸시 후 사용자 확인을 받고 main 병합과 다음 기능을 진행합니다.

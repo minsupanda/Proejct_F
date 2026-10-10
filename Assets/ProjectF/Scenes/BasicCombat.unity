@@ -2209,7 +2209,7 @@ MonoBehaviour:
 
     LMB / drag: select allies   RMB tree: gather   RMB enemy: attack   RMB ground: move
 
-    Gather wood and build walls before invasion. RMB / Esc cancels building tools.'
+    Shift+LMB: add/remove   Shift+drag: add   RMB / Esc: cancel tools'
 --- !u!222 &344415876
 CanvasRenderer:
   m_ObjectHideFlags: 0
