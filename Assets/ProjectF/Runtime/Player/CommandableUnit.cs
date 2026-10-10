@@ -12,6 +12,7 @@ namespace ProjectF.Player
         private Rigidbody2D body;
         private CircleCollider2D circle;
         public event System.Action MoveCommandIssued;
+        public event System.Action StopCommandIssued;
         public bool IsSelected { get; private set; }
         public bool HasDestination { get; private set; }
         public Vector2 Destination { get; private set; }
@@ -60,6 +61,16 @@ namespace ProjectF.Player
             if (!isActiveAndEnabled) return;
             MoveCommandIssued?.Invoke();
             NavigateTo(destination);
+        }
+
+        /// <summary>Cancel active actions as a player order; internal arrival stops stay silent.</summary>
+        public void StopCommand()
+        {
+            if (!isActiveAndEnabled) return;
+            StopCommandIssued?.Invoke();
+            Stop();
+            // Other moving units must plan around this unit's newly stationary position.
+            CommandOrder = navigation.NewOrder();
         }
 
         // Actions such as pursuit share the planner without creating a new player order.

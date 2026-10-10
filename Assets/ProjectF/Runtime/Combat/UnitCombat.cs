@@ -51,11 +51,13 @@ namespace ProjectF.Combat
         private void OnEnable()
         {
             unit.MoveCommandIssued += ClearTarget;
+            unit.StopCommandIssued += CancelAttack;
         }
 
         private void OnDisable()
         {
             unit.MoveCommandIssued -= ClearTarget;
+            unit.StopCommandIssued -= CancelAttack;
             // Disabling combat alone must also release its movement order.
             if (Target != null || WallTarget != null || issuedPursuit) unit.Stop();
             ClearTarget();

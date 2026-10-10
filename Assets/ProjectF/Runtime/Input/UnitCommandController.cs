@@ -77,6 +77,13 @@ namespace ProjectF.Input
             }
             Vector2 pointer = input.Pointer;
             bool insideView = worldCamera.pixelRect.Contains(pointer);
+            if (input.StopPressed && insideView && !selecting && !input.SelectHeld
+                && Time.timeScale > 0 && !PointerOverUI())
+            {
+                foreach (var unit in selected) unit.StopCommand();
+                // Stop wins over a right-click received in the same frame.
+                return;
+            }
             if (input.SelectPressed && insideView && !PointerOverUI())
             {
                 start = pointer;

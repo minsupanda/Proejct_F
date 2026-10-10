@@ -27,7 +27,8 @@
 | 준비 단계의 병력 충원 | 사용자 승인 완료, main 병합 완료 | [UnitRecruitment](Features/UnitRecruitment.md) |
 | 방어벽 수리·손상 비례 철거 환급 | 사용자 승인 완료, main 병합 완료 | [WallRepair](Features/WallRepair.md) |
 | 훈련소 집결 지점 | 사용자 승인 완료, main 병합 완료 | [RecruitmentRally](Features/RecruitmentRally.md) |
-| Shift 추가·해제 선택 | 구현·검증 완료, 사용자 확인 대기 | [AdditiveSelection](Features/AdditiveSelection.md) |
+| Shift 추가·해제 선택 | 사용자 승인 완료, main 병합 완료 | [AdditiveSelection](Features/AdditiveSelection.md) |
+| 선택 병사 정지 명령 | 구현·검증 완료, 사용자 확인 대기 | [StopCommand](Features/StopCommand.md) |
 
 생산 시설·전용 일꾼·운반·공성 장비·작업자 수리, 영웅·병종·지휘력, 캠페인 침공 일정·포탈 성장, 정찰·지도, 외교·작위 등은 기획 단계입니다.
 
@@ -153,7 +154,7 @@
 - 사용법·화면·검증 결과는 `Docs/Features/RecruitmentRally.md`에 기록합니다. 사용자 확인 후 이번 기능을 main에 병합하고 다음 기능으로 진행합니다.
 - 구현 `43511fe`, 사용자 다음 단계 진행 승인. main 병합 `aab0e15`, GitHub 반영 완료.
 
-## 이번 기능: Shift 추가·해제 선택
+## 승인된 Shift 추가·해제 선택
 
 - 브랜치: `codex/additive-selection`, 승인된 main `aab0e15`에서 분기.
 - Shift + 클릭은 아군 선택 추가·해제, Shift + 드래그는 범위 안 아군 추가입니다. 일반 선택은 교체하며 빈 땅 Shift 클릭은 선택을 유지합니다.
@@ -162,3 +163,13 @@
 - 전용 검사 12개와 기존 174개를 포함해 최종 전체 PlayMode 186개 통과, 실패·건너뜀 0개, 257.65초. 실제 Play의 Shift 클릭으로 선택 1→3→2명과 선택 원 갱신을 확인했습니다.
 - 2026-10-11 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건. 실행 파일 시작 검사 통과, 시작 로그 오류·예외 없음. 기본 씬의 누락 스크립트·선택 참조 0개. 기능 브랜치에 코드·검사·씬·사용법·화면을 함께 커밋·푸시합니다.
 - 사용법과 검증은 `Docs/Features/AdditiveSelection.md`에 기록합니다. 구현·검증·커밋·푸시 후 사용자 확인을 받고 main 병합과 다음 기능을 진행합니다.
+- 구현 `428b91d`, 사용자 다음 단계 진행 승인. main 병합 `2c8ea7c`, GitHub 반영 완료.
+
+## 이번 기능: 선택 병사 정지 명령
+
+- 브랜치: `codex/unit-stop-command`, 승인된 main `2c8ea7c`에서 분기.
+- 선택 후 지도 위에서 S를 눌러 이동·공격·채집을 취소합니다. 선택·미선택 병사의 기존 명령을 구분하고 새 우클릭으로 행동을 재개합니다.
+- 내부 도착 정지와 플레이어 정지 이벤트를 분리하고 기존 행동 취소·길찾기·입력 점유를 재사용합니다. 공격 대기시간과 이미 지급된 자원은 유지합니다.
+- 전체 PlayMode 검사 197개 통과(기존 186개 + 정지 11개), 실패·건너뜀 0개, 270.00초. 실제 Play에서 이동 중 S → Idle·속도 0·목적지 표시 제거·선택 유지를 확인했습니다.
+- Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건. 실행 파일 시작 검사 통과, 시작 로그 오류·예외 없음. BasicCombat 저장·Play 중지, 누락 스크립트·선택 참조 0개입니다.
+- 전용 검사·전체 회귀·실제 화면·Windows 빌드를 검증하고 코드·씬·검사·문서를 커밋·푸시합니다. 사용자 확인 후 main 병합과 다음 기능을 진행합니다.
