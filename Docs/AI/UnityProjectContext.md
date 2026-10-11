@@ -5,10 +5,10 @@
 ## Project Summary
 
 - 프로젝트 루트: `C:/Unity/Proejct_F`
-- 현재 단계: 승인된 정지 명령 기반에 부대 번호 저장·호출 통합
-- 현재 브랜치: `codex/control-groups` (승인 후 main에서 분기)
-- 마지막 분석: 2026-10-11 (Asia/Seoul)
-- 기준 커밋: `567f4ee` (정지 명령 main 병합) + 이번 부대 번호 작업. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
+- 현재 단계: 승인된 부대 번호 기반에 선택 병사 상태 패널 통합
+- 현재 브랜치: `codex/selection-status` (승인 후 main에서 분기)
+- 마지막 분석: 2026-10-12 (Asia/Seoul)
+- 기준 커밋: `8f6eaa3` (부대 번호 main 병합) + 이번 상태 패널 작업. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
 
 ## Confirmed Environment
 
@@ -124,8 +124,10 @@
 - 정지 명령 전체 PlayMode 197개 통과, 실패·건너뜀 0개, 270.00초. 새 전용 11개 포함. 실제 Play의 이동 중 S로 Idle·속도 0·목적지 제거·선택 유지 확인. 사용자 승인·main 병합 완료 (`567f4ee`). `Docs/Features/StopCommand.md` 참조.
 - 2026-10-11 정지 명령 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건, 12.914초, 132,861,954바이트. `Builds/StopCommand/ProjectF_StopCommand.exe` 시작 검사 통과, 시작 로그 오류·예외 없음. BasicCombat 저장·Play 중지, 누락 스크립트·선택 참조 0개.
 - 부대 번호 전체 PlayMode 210개 통과, 실패·건너뜀·판정 불가 0개, 273.49초. 전용 13개 포함. 실제 Play에서 Ctrl+1 저장·다른 선택·1 호출 후 두 병사의 선택 원 복원과 안내문을 확인했다. `Docs/Features/ControlGroups.md` 참조.
-- 2026-10-11 부대 번호 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건, 12.695초, 132,863,058바이트. `Builds/ControlGroups/ProjectF_ControlGroups.exe` 시작 검사 통과, 로그 오류·예외 없음. BasicCombat 저장·Play 중지, 누락 스크립트·선택 참조 0개, EventSystem 1개. 사용자 확인 대기.
-- PlayMode 테스트: 이동·카메라 29개 + 기본 전투 14개 + 적 AI 13개 + 침공 12개 + 건설 12개 + 철거 13개 + 벽 전투 16개 + 목재 채집 15개 + 반복 침공 10개 + 병력 충원 12개 + 벽 수리 14개 + 집결 지점 14개 + 추가 선택 12개 + 정지 명령 11개 + 부대 번호 13개
+- 2026-10-11 부대 번호 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건, 12.695초, 132,863,058바이트. `Builds/ControlGroups/ProjectF_ControlGroups.exe` 시작 검사 통과, 로그 오류·예외 없음. BasicCombat 저장·Play 중지, 누락 스크립트·선택 참조 0개, EventSystem 1개. 사용자 승인·main 병합 완료 (`8f6eaa3`).
+- 선택 상태 패널 최종 전체 PlayMode 219개 통과, 실패·건너뜀·판정 불가 0개, 279.46초. 전용 9개 포함. 새 패널 아래에 놓인 기존 빈 지도 드래그 검사 좌표를 보완하고 UI 밖 시작 여부를 검증했습니다. 관련 선택 12개 재검사 통과. 실제 Play에서 4명·400/400 → 375/400 체력 갱신과 이동 4명 표시를 확인했습니다. `Docs/Features/SelectionStatus.md` 참조.
+- 2026-10-12 선택 상태 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건, 14.238초, 132,866,130바이트. `Builds/SelectionStatus/ProjectF_SelectionStatus.exe` 시작 검사 통과, 로그 오류·예외 없음. Editor 재실행 후 BasicCombat 저장·Play 중지, HUD 1개, 누락 스크립트·HUD/선택 참조 0개 확인. 사용자 확인 대기. `Assets/_Recovery`의 이전 세션 백업은 로컬 보존·커밋 제외.
+- PlayMode 테스트: 이동·카메라 29개 + 기본 전투 14개 + 적 AI 13개 + 침공 12개 + 건설 12개 + 철거 13개 + 벽 전투 16개 + 목재 채집 15개 + 반복 침공 10개 + 병력 충원 12개 + 벽 수리 14개 + 집결 지점 14개 + 추가 선택 12개 + 정지 명령 11개 + 부대 번호 13개 + 상태 패널 9개
 - 벽 돌파의 도착 검사는 AI 설정 `ReturnTolerance`를 사용한다. 이전 고정 `x < -5.5` 조건은 기본 허용 거리 0.6과 맞지 않아 정상 Guarding에서도 간헐적으로 실패했다. 집결 통합 과정에서 바로잡고 판단 시점 13가지를 검사하는 회귀 사례를 추가했다. 전투 런타임 변경 없음.
 - 2026-10-06 목재 채집 최종 전체 123개 통과, 실패·건너뜀 0개, 199.91초. 실제 기본 설정의 자원 증가·소진·추가 건설·침공 취소 확인. `Docs/Features/WoodGathering.md` 참조. 승인 후 main 병합 완료 (`e5e4642`).
 - 목재 채집 Windows x64 빌드 성공, 오류 0개·기존 경고 501개, 24.410초, 132,827,202바이트. `Builds/WoodGathering/ProjectF_WoodGathering.exe` 시작 검사에서 엔진·입력 초기화와 프로세스 유지, 시작 로그 오류·예외 없음 확인.
@@ -161,6 +163,7 @@
 - Shift 추가·해제 선택은 기존 CommandInput/UnitCommandController 안에 통합했다. 좌클릭 시작 시 Shift를 저장하고, 클릭은 토글·드래그는 합집합으로 처리한다. List와 HashSet을 함께 유지해 중복을 방지한다. 선택 변경은 기존 명령을 취소하지 않는다.
 - S 정지는 `CommandableUnit.StopCommand`와 `StopCommandIssued` 이벤트로 이동·공격·채집을 취소한다. 내부 `Stop`은 조용한 도착·접근 처리에 유지한다. UI·드래그·패닝·건설/집결 도구·일시정지에서는 입력을 무시한다. 길게 누르기는 반복 명령을 만들지 않는다. 위치 사수 태세는 아니다.
 - 부대 번호는 기존 CommandInput/UnitCommandController에 통합했다. Ctrl+1~9로 선택의 스냅샷을 저장하고 1~9로 교체 선택한다. 9개 목록은 씬 수명 동안 보관하며 임시 컴포넌트 비활성화에는 유지, 씬 재시작에는 초기화한다. 호출 때 선택 불가 참조를 정리하며 기존 이동·공격·채집을 변경하지 않는다.
+- `SelectionStatusHUD`는 Command HUD 아래에서 기존 선택을 읽어 인원·체력 합계·명령별 인원을 표시한다. 선택 목록만 0.1초 간격의 unscaled time으로 확인하고 숫자가 바뀔 때만 텍스트를 갱신한다. 선택 해제·HUD 비활성화 시 패널과 클릭 차단을 숨긴다. 공격/채집은 접근·추격을 포함하는 명령 기준이며 각 병사는 한 범주에만 포함한다. `SelectionStatusSetup`은 중복 생성을 막고 기존 Canvas에 UI를 구성한다.
 - 유닛은 스프라이트가 아니라 런타임 메시와 단색 URP Unlit 재질을 조합한 임시 도형이다.
 - 병력 충원은 고정 훈련소·기본 병사·임시 목재 비용으로 구현했다. 병영 건설·식량·인구·금화·영웅별 지휘력은 아직 없다. 현재 생존 아군 상한은 영웅 지휘력 규칙이 아니다.
 - `InputCameraSceneSetup.ConfigureMouseControls()`는 기존 씬을 업그레이드하지만 호출 자체가 자동 저장을 보장하지 않는다.
