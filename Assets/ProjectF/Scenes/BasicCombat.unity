@@ -2205,7 +2205,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 'PROJECT F  /  ESTATE DEFENSE
+  m_Text: 'PROJECT F  /  ESTATE DEFENSE   Ctrl+1-9: save group   1-9: select group
 
     LMB / drag: select allies   RMB tree: gather   RMB enemy: attack   RMB ground: move
 
