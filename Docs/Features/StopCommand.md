@@ -1,6 +1,6 @@
 # 선택 병사 정지 명령
 
-상태: 구현·검증 완료, 사용자 확인 대기. 브랜치 `codex/unit-stop-command`, 승인된 추가 선택의 main 병합 `2c8ea7c`에서 분기했습니다. 사용자 확인 후 main에 병합합니다.
+상태: 사용자 승인·main 병합 완료. 브랜치 `codex/unit-stop-command`, 승인된 추가 선택의 main 병합 `2c8ea7c`에서 분기했습니다. 구현 `e168575`, main 병합 `567f4ee`, GitHub 반영 완료.
 
 ## 사용법
 

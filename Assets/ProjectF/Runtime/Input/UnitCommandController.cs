@@ -17,6 +17,8 @@ namespace ProjectF.Input
         [SerializeField] private Rect movementBounds = new Rect(-23, -15, 46, 30);
         private readonly List<CommandableUnit> selected = new List<CommandableUnit>();
         private readonly HashSet<CommandableUnit> selectedSet = new HashSet<CommandableUnit>();
+        // Scene-owned groups survive temporary input/controller disable; invalid members are pruned on recall.
+        private readonly List<CommandableUnit>[] groups = new List<CommandableUnit>[CommandInput.ControlGroupCount];
         private readonly List<RaycastResult> uiHits = new List<RaycastResult>();
         private readonly List<CommandableUnit> selectable = new List<CommandableUnit>();
         private readonly Collider2D[] resourceHits = new Collider2D[16];
@@ -30,7 +32,11 @@ namespace ProjectF.Input
         private bool waitForPointerRelease;
         public IReadOnlyList<CommandableUnit> Selected => selected;
         public bool IsDragging => dragging;
-        private void Awake() => navigation = GetComponent<NavigationWorld2D>();
+        private void Awake()
+        {
+            navigation = GetComponent<NavigationWorld2D>();
+            for (int i = 0; i < groups.Length; i++) groups[i] = new List<CommandableUnit>();
+        }
 
         /// <summary>Modal tools own pointer clicks until released; cancellation never leaks a world order.</summary>
         public void SetPointerCommandsBlocked(object owner, bool blocked)
@@ -82,6 +88,15 @@ namespace ProjectF.Input
             {
                 foreach (var unit in selected) unit.StopCommand();
                 // Stop wins over a right-click received in the same frame.
+                return;
+            }
+            int group = input.GroupPressed;
+            if (group >= 0 && insideView && !selecting && !input.SelectHeld
+                && Time.timeScale > 0 && !PointerOverUI())
+            {
+                if (input.StoreGroupHeld) StoreGroup(group);
+                else RecallGroup(group);
+                // Selection shortcuts consume the frame before any pointer order can use it.
                 return;
             }
             if (input.SelectPressed && insideView && !PointerOverUI())
@@ -153,6 +168,22 @@ namespace ProjectF.Input
             foreach (var unit in selected) if (unit != null) unit.SetSelected(false);
             selected.Clear();
             selectedSet.Clear();
+        }
+
+        private void StoreGroup(int slot)
+        {
+            var members = groups[slot];
+            members.Clear();
+            members.AddRange(selected);
+        }
+
+        private void RecallGroup(int slot)
+        {
+            ClearSelection();
+            var members = groups[slot];
+            for (int i = members.Count - 1; i >= 0; i--)
+                if (!CanSelect(members[i])) members.RemoveAt(i);
+            foreach (var unit in members) AddSelected(unit);
         }
 
         private static bool CanSelect(CommandableUnit unit)

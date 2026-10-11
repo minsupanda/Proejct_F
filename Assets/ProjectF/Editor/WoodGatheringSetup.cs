@@ -65,7 +65,7 @@ namespace ProjectF.Editor
                 var view = Undo.AddComponent<WoodGathererView>(combat.gameObject); Ref(view, "label", label);
             }
             var help = controls.GetComponent<UnityEngine.UI.Text>(); Undo.RecordObject(help, "Update gathering controls");
-            help.text = "PROJECT F  /  ESTATE DEFENSE\nLMB / drag: select allies   RMB tree: gather   RMB enemy: attack   RMB ground: move\nShift+LMB: add/remove   Shift+drag: add   S: stop   RMB / Esc: cancel tools";
+            help.text = "PROJECT F  /  ESTATE DEFENSE   Ctrl+1-9: save group   1-9: select group\nLMB / drag: select allies   RMB tree: gather   RMB enemy: attack   RMB ground: move\nShift+LMB: add/remove   Shift+drag: add   S: stop   RMB / Esc: cancel tools";
             Undo.CollapseUndoOperations(group);
             EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene); AssetDatabase.SaveAssets();
         }

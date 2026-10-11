@@ -3,11 +3,13 @@ using UnityEngine.InputSystem;
 
 namespace ProjectF.Input
 {
-    /// <summary>Owns pointer commands and the shared cancel shortcut.</summary>
+    /// <summary>Owns pointer commands and gameplay shortcuts.</summary>
     public sealed class CommandInput : MonoBehaviour
     {
         private InputActionMap actions;
-        private InputAction point, select, command, pan, zoom, cancel, additiveSelection, stop;
+        public const int ControlGroupCount = 9;
+        private InputAction point, select, command, pan, zoom, cancel, additiveSelection, stop, storeGroup;
+        private readonly InputAction[] groups = new InputAction[ControlGroupCount];
         private bool focused = true;
 
         public bool Ready => isActiveAndEnabled && focused;
@@ -20,6 +22,18 @@ namespace ProjectF.Input
         public bool CommandHeld => Ready && command.IsPressed();
         public bool CancelPressed => Ready && cancel.WasPressedThisFrame();
         public bool StopPressed => Ready && stop.WasPressedThisFrame();
+        public bool StoreGroupHeld => Ready && storeGroup.IsPressed();
+        /// <summary>Zero-based slot pressed this frame, or -1. Lowest number wins simultaneous presses.</summary>
+        public int GroupPressed
+        {
+            get
+            {
+                if (Ready)
+                    for (int i = 0; i < groups.Length; i++)
+                        if (groups[i].WasPressedThisFrame()) return i;
+                return -1;
+            }
+        }
         public bool PanHeld => Ready && pan.IsPressed();
         public float Scroll => Ready ? zoom.ReadValue<Vector2>().y : 0f;
 
@@ -35,6 +49,10 @@ namespace ProjectF.Input
             additiveSelection = actions.AddAction("AdditiveSelection", InputActionType.Button, "<Keyboard>/leftShift");
             additiveSelection.AddBinding("<Keyboard>/rightShift");
             stop = actions.AddAction("Stop", InputActionType.Button, "<Keyboard>/s");
+            storeGroup = actions.AddAction("StoreGroup", InputActionType.Button, "<Keyboard>/leftCtrl");
+            storeGroup.AddBinding("<Keyboard>/rightCtrl");
+            for (int i = 0; i < groups.Length; i++)
+                groups[i] = actions.AddAction($"Group{i + 1}", InputActionType.Button, $"<Keyboard>/{i + 1}");
         }
 
         private void OnEnable() { if (focused) actions.Enable(); }
