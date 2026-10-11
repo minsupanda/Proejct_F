@@ -1,6 +1,6 @@
 # Shift 추가·해제 선택
 
-상태: 구현·검증 완료, 사용자 확인 대기. 브랜치 `codex/additive-selection`, 승인된 집결 지점의 main 병합 `aab0e15`에서 분기했습니다. 사용자 확인 후 main에 병합합니다.
+상태: 사용자 승인·main 병합 완료. 구현 `428b91d`, main 병합 `2c8ea7c`. 브랜치 `codex/additive-selection`은 집결 지점의 main 병합 `aab0e15`에서 분기했습니다.
 
 ## 사용법
 

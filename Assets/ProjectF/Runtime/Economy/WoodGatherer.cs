@@ -37,6 +37,7 @@ namespace ProjectF.Economy
         private void OnEnable()
         {
             unit.MoveCommandIssued += Cancel;
+            unit.StopCommandIssued += Cancel;
             combat.AttackCommandIssued += Cancel;
             combat.Died += Cancel;
             if (invasion != null) invasion.Changed += OnInvasionChanged;
@@ -44,6 +45,7 @@ namespace ProjectF.Economy
         private void OnDisable()
         {
             unit.MoveCommandIssued -= Cancel;
+            unit.StopCommandIssued -= Cancel;
             combat.AttackCommandIssued -= Cancel;
             combat.Died -= Cancel;
             if (invasion != null) invasion.Changed -= OnInvasionChanged;
