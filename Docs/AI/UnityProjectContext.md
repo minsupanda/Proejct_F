@@ -5,10 +5,10 @@
 ## Project Summary
 
 - 프로젝트 루트: `C:/Unity/Proejct_F`
-- 현재 단계: 승인된 부대 번호 기반에 선택 병사 상태 패널 통합
-- 현재 브랜치: `codex/selection-status` (승인 후 main에서 분기)
+- 현재 단계: 승인된 선택 상태 패널 기반에 훈련 취소·목재 환불 통합
+- 현재 브랜치: `codex/recruitment-cancel` (승인 후 main에서 분기)
 - 마지막 분석: 2026-10-12 (Asia/Seoul)
-- 기준 커밋: `8f6eaa3` (부대 번호 main 병합) + 이번 상태 패널 작업. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
+- 기준 커밋: `54feab2` (선택 상태 패널 main 병합) + 이번 훈련 취소 작업. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
 
 ## Confirmed Environment
 
@@ -61,7 +61,7 @@
 - 빌드 씬 2: `Assets/Scenes/SampleScene.unity` (활성, 테스트 종료 시 사용)
 - 초기 아군 4명·목재 80. `Project F → Open Gameplay`로 열기. 채집·건설(10/칸) → START INVASION → 3초 준비 → 1.5초 간격 생성 → 격퇴 → NEXT ROUND → 다음 준비. 기본 3차(3명→4명→5명), 최종 승리·패배·취소 후 RESTART.
 - 다음 차수 준비에서 아군 체력·사망·위치, 목재·나무 잔량, 벽·체력을 유지하며 채집·건설·철거·수리를 재개. 첫 시작에 차수 수·기본 병력·증가량 확정. 자동 회복·부활·보상·나무 재생 없음.
-- TRAIN SOLDIER: 목재 20 선결제·준비 시간 5초 후 훈련소 출구에 아군 한 명 배치. 초기 아군 포함 생존 8명 상한, 훈련 슬롯 하나. 침공·결과·일시정지에서는 진행을 보관하고 다음 준비에서 재개. 수동 취소·환불 없음.
+- TRAIN SOLDIER: 목재 20 선결제·준비 시간 5초 후 훈련소 출구에 아군 한 명 배치. 초기 아군 포함 생존 8명 상한, 훈련 슬롯 하나. 침공·결과·일시정지에서는 진행을 보관하고 다음 준비에서 재개. 준비 단계의 CANCEL +20은 미배치 슬롯을 취소하고 최초 지불 목재를 전액 환불. 출구·상한 대기도 취소 가능하며 이미 나온 병사는 유지.
 - SET RALLY → 빈 땅 클릭으로 준비 단계의 집결 지점 지정, CLEAR RALLY로 해제. 배치 시점의 지점으로 새 병사에게 이동 명령을 한 번 부여. 이미 나온 병사의 명령은 유지. 다음 차수까지 보관하고 재시작 시 초기화. 목적지 주변의 지형은 검사하지만 전체 경로 연결은 보장하지 않음.
 - 충원 병사는 선택·이동·공격·채집 가능. `PortalInvasion`에 방어 병력으로 등록하므로 초기 아군이 전멸해도 충원 병사가 살아 있으면 전투 지속. 막힌 출구·배치 시 상한은 대기 후 재검사.
 - 침공 전 REMOVE WALL로 직접 지은 벽 철거·환급 가능. 온전한 벽의 기본 환급률 100%. 구매 시 최대 환급액을 보관하고 실제 환급은 남은 체력 비율을 곱해 내림. 건설·철거·수리 모두 우클릭/Esc 취소, 침공 시작 후 잠금.
@@ -90,6 +90,7 @@
 | Wall combat | `WallStructure`가 체력과 파괴 소유. `UnitCombat.WallTarget`은 유닛 대상과 배타적이며 공격 주기 공유. AI Breaching 상태가 전방 벽 선택·실패 시 대기·진격 재개를 담당 | Confirmed | `WallStructure`, `UnitCombat`, `EnemyCombatAI`, `WallHealthView` |
 | Wood gathering | `WoodResourceNode`의 유한 잔량을 `WoodGatherer`가 기존 재고로 이전. 접근·시야·작업 시간 검사, 명령 이벤트로 취소. 상태·잔량 이벤트로 표시 갱신 | Confirmed | `Runtime/Economy`, `UnitCommandController`, `UnitCombat.AttackCommandIssued` |
 | Recruitment | `UnitRecruitment`이 결제·훈련 슬롯·시간·충원 병력 생성과 사망 정리 소유. 비활성 프리팹에 길찾기·영지를 연결하고 활성화 후 침공 방어 병력 등록. HUD는 표시·버튼 담당 | Confirmed | `UnitRecruitment`, `RecruitmentHUD`, `RecruitmentSettings`, `RecruitmentSetup` |
+| Recruitment cancellation | 최초 지불 금액을 슬롯에 보관. 준비 단계·전액 환불 가능 여부를 검증하고 자원 변경 이벤트 전에 슬롯을 정리. 결제·취소 잠금으로 중복 환불과 이벤트 재진입 차단. 기존 HUD 버튼 재사용 | Confirmed | `RecruitmentCancelTests`, `UnitRecruitment`, `EstateStockpile`, `RecruitmentHUD` |
 | Recruitment rally | `UnitRecruitment`이 지점·검증·배치 시 이동을 소유. 입력·깃발은 `RecruitmentRallyController`, 버튼·안내는 `RecruitmentRallyHUD`. 기존 길찾기·포인터 점유 재사용, 건설 상태 이벤트로 도구 전환 | Confirmed | `RecruitmentRallyTests`, `RecruitmentRallySetup` |
 | Modal pointer ownership | 건설 입력이 소유자별 차단 API로 월드 클릭을 점유. 취소 후 버튼을 뗄 때까지 기존 명령 차단 | Confirmed | `UnitCommandController.SetPointerCommandsBlocked`, `WallPlacementController` |
 | Local perception | 2D 물리 영역 조회와 재사용 목록, 기본 0.25초 판단, 첫 탐지 시점 분산, 프로파일러 `ProjectF.EnemyAI.Detect` | Confirmed | `EnemyCombatAI.FindTarget` |
@@ -126,8 +127,10 @@
 - 부대 번호 전체 PlayMode 210개 통과, 실패·건너뜀·판정 불가 0개, 273.49초. 전용 13개 포함. 실제 Play에서 Ctrl+1 저장·다른 선택·1 호출 후 두 병사의 선택 원 복원과 안내문을 확인했다. `Docs/Features/ControlGroups.md` 참조.
 - 2026-10-11 부대 번호 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건, 12.695초, 132,863,058바이트. `Builds/ControlGroups/ProjectF_ControlGroups.exe` 시작 검사 통과, 로그 오류·예외 없음. BasicCombat 저장·Play 중지, 누락 스크립트·선택 참조 0개, EventSystem 1개. 사용자 승인·main 병합 완료 (`8f6eaa3`).
 - 선택 상태 패널 최종 전체 PlayMode 219개 통과, 실패·건너뜀·판정 불가 0개, 279.46초. 전용 9개 포함. 새 패널 아래에 놓인 기존 빈 지도 드래그 검사 좌표를 보완하고 UI 밖 시작 여부를 검증했습니다. 관련 선택 12개 재검사 통과. 실제 Play에서 4명·400/400 → 375/400 체력 갱신과 이동 4명 표시를 확인했습니다. `Docs/Features/SelectionStatus.md` 참조.
-- 2026-10-12 선택 상태 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건, 14.238초, 132,866,130바이트. `Builds/SelectionStatus/ProjectF_SelectionStatus.exe` 시작 검사 통과, 로그 오류·예외 없음. Editor 재실행 후 BasicCombat 저장·Play 중지, HUD 1개, 누락 스크립트·HUD/선택 참조 0개 확인. 사용자 확인 대기. `Assets/_Recovery`의 이전 세션 백업은 로컬 보존·커밋 제외.
-- PlayMode 테스트: 이동·카메라 29개 + 기본 전투 14개 + 적 AI 13개 + 침공 12개 + 건설 12개 + 철거 13개 + 벽 전투 16개 + 목재 채집 15개 + 반복 침공 10개 + 병력 충원 12개 + 벽 수리 14개 + 집결 지점 14개 + 추가 선택 12개 + 정지 명령 11개 + 부대 번호 13개 + 상태 패널 9개
+- 2026-10-12 선택 상태 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건, 14.238초, 132,866,130바이트. `Builds/SelectionStatus/ProjectF_SelectionStatus.exe` 시작 검사 통과, 로그 오류·예외 없음. Editor 재실행 후 BasicCombat 저장·Play 중지, HUD 1개, 누락 스크립트·HUD/선택 참조 0개 확인. 사용자 승인·main 병합 완료 (`54feab2`). `Assets/_Recovery`의 이전 세션 백업은 로컬 보존·커밋 제외.
+- 훈련 취소 전용 PlayMode 12개 통과, 실패·건너뜀·판정 불가 0개, 4.82초. 최종 전체 231개 통과, 실패·건너뜀·판정 불가 0개, 280.57초. CLI 상태가 실행 중으로 남아 Unity 최종 XML과 Editor 완료 로그로 확인했습니다. 기본 설정의 실제 버튼으로 목재 80→60→80·병력 4명 유지·훈련 버튼 복귀를 확인. `Docs/Features/RecruitmentCancel.md` 참조.
+- 2026-10-12 훈련 취소 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건, 12.470초, 132,866,674바이트. `Builds/RecruitmentCancel/ProjectF_RecruitmentCancel.exe` 시작 검사 통과, 로그 오류·예외 없음. BasicCombat 저장·Play 중지, 누락 스크립트·선택/HUD/훈련 참조 0개. 사용자 확인 대기.
+- PlayMode 테스트: 이동·카메라 29개 + 기본 전투 14개 + 적 AI 13개 + 침공 12개 + 건설 12개 + 철거 13개 + 벽 전투 16개 + 목재 채집 15개 + 반복 침공 10개 + 병력 충원 12개 + 벽 수리 14개 + 집결 지점 14개 + 추가 선택 12개 + 정지 명령 11개 + 부대 번호 13개 + 상태 패널 9개 + 훈련 취소 12개
 - 벽 돌파의 도착 검사는 AI 설정 `ReturnTolerance`를 사용한다. 이전 고정 `x < -5.5` 조건은 기본 허용 거리 0.6과 맞지 않아 정상 Guarding에서도 간헐적으로 실패했다. 집결 통합 과정에서 바로잡고 판단 시점 13가지를 검사하는 회귀 사례를 추가했다. 전투 런타임 변경 없음.
 - 2026-10-06 목재 채집 최종 전체 123개 통과, 실패·건너뜀 0개, 199.91초. 실제 기본 설정의 자원 증가·소진·추가 건설·침공 취소 확인. `Docs/Features/WoodGathering.md` 참조. 승인 후 main 병합 완료 (`e5e4642`).
 - 목재 채집 Windows x64 빌드 성공, 오류 0개·기존 경고 501개, 24.410초, 132,827,202바이트. `Builds/WoodGathering/ProjectF_WoodGathering.exe` 시작 검사에서 엔진·입력 초기화와 프로세스 유지, 시작 로그 오류·예외 없음 확인.

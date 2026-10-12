@@ -1,6 +1,6 @@
 # 선택 병사 상태 패널
 
-상태: 구현·검증 완료, 사용자 확인 대기. 브랜치 `codex/selection-status`, 승인된 부대 번호의 main 병합 `8f6eaa3`에서 분기했습니다. 사용자 최종 확인 후 main에 병합합니다.
+상태: 사용자 승인 완료. 구현 `abb1414`, main 병합 `54feab2`, GitHub 반영 완료. 브랜치 `codex/selection-status`는 승인된 부대 번호의 main 병합 `8f6eaa3`에서 분기했습니다.
 
 ## 사용법
 
