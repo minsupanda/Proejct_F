@@ -5,10 +5,10 @@
 ## Project Summary
 
 - 프로젝트 루트: `C:/Unity/Proejct_F`
-- 현재 단계: 승인된 선택 상태 패널 기반에 훈련 취소·목재 환불 통합
-- 현재 브랜치: `codex/recruitment-cancel` (승인 후 main에서 분기)
-- 마지막 분석: 2026-10-12 (Asia/Seoul)
-- 기준 커밋: `54feab2` (선택 상태 패널 main 병합) + 이번 훈련 취소 작업. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
+- 현재 단계: 승인된 훈련 취소 기반에 일시정지·재개 통합
+- 현재 브랜치: `codex/game-pause` (승인 후 main에서 분기)
+- 마지막 분석: 2026-10-13 (Asia/Seoul)
+- 기준 커밋: `0bf400a` (훈련 취소 main 병합) + 이번 일시정지 작업. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
 
 ## Confirmed Environment
 
@@ -70,7 +70,8 @@
 - 영지 왼쪽 위 나무 3곳(각 40). 준비 상태에서 아군 선택 후 나무 우클릭으로 접근·2초마다 목재 5 획득. 이동·공격·침공 시작 시 취소. 소진 시 그루터기만 남고 충돌 제거. 전용 일꾼·운반·저장은 아직 없음.
 - 시작 흐름: Unity가 `BasicCombat`을 로드 → 아군이 `NavigationWorld2D`에 등록 → 침공 시작 시 비활성 몬스터 프리팹을 생성·길찾기에 연결·활성화 → 기존 전투와 중앙 길찾기로 진격·교전
 - 저장된 주요 루트 오브젝트: `Mouse Commands`, `Main Camera`, `Lord`, `Test Unit 2~4`, `Navigation Obstacles`, `Command HUD`, `Command Destinations`, `Movement Test Ground`
-- 별도 메뉴나 범용 게임 상태 시스템은 없음. `InvasionHUD`의 NEXT ROUND는 같은 씬에서 준비 상태로 전환하고, RESTART는 현재 씬을 비동기로 다시 불러옴
+- Space/PAUSE로 일시정지, Space/RESUME으로 재개. 씬 소유 GamePause가 시간·명령 차단을 관리하고 PauseHUD가 전체 화면 입력 차단·버튼을 표시. 이동·공격·채집·훈련·침공 시간과 선택을 보관. 카메라 정지, 건설·집결 편집 도구 종료. 비활성·씬 종료 시 자신이 멈춘 시간 복구.
+- 메인 메뉴나 범용 게임 상태 시스템은 없음. `InvasionHUD`의 NEXT ROUND는 같은 씬에서 준비 상태로 전환하고, RESTART는 현재 씬을 비동기로 다시 불러옴
 
 ## Architecture
 
@@ -93,6 +94,7 @@
 | Recruitment cancellation | 최초 지불 금액을 슬롯에 보관. 준비 단계·전액 환불 가능 여부를 검증하고 자원 변경 이벤트 전에 슬롯을 정리. 결제·취소 잠금으로 중복 환불과 이벤트 재진입 차단. 기존 HUD 버튼 재사용 | Confirmed | `RecruitmentCancelTests`, `UnitRecruitment`, `EstateStockpile`, `RecruitmentHUD` |
 | Recruitment rally | `UnitRecruitment`이 지점·검증·배치 시 이동을 소유. 입력·깃발은 `RecruitmentRallyController`, 버튼·안내는 `RecruitmentRallyHUD`. 기존 길찾기·포인터 점유 재사용, 건설 상태 이벤트로 도구 전환 | Confirmed | `RecruitmentRallyTests`, `RecruitmentRallySetup` |
 | Modal pointer ownership | 건설 입력이 소유자별 차단 API로 월드 클릭을 점유. 취소 후 버튼을 뗄 때까지 기존 명령 차단 | Confirmed | `UnitCommandController.SetPointerCommandsBlocked`, `WallPlacementController` |
+| Game pause | CommandInput의 Space 입력, GamePause의 시간·입력 점유, PauseHUD의 이벤트 기반 화면. 기존 FixedUpdate와 scaled time을 재사용하며 카메라에는 시간 정지 검사를 추가 | Confirmed | `GamePause`, `PauseHUD`, `GamePauseSetup`, `GamePauseTests` |
 | Local perception | 2D 물리 영역 조회와 재사용 목록, 기본 0.25초 판단, 첫 탐지 시점 분산, 프로파일러 `ProjectF.EnemyAI.Detect` | Confirmed | `EnemyCombatAI.FindTarget` |
 | Central cooperative planning | `NavigationWorld2D`가 모든 유닛을 한 번에 우선순위별 계획하고 예약 | Confirmed | `NavigationWorld2D.cs` |
 | Space-time A* | 위치 노드뿐 아니라 0.1초 시간 단계를 상태에 포함하며 대기 행동 허용 | Confirmed | `CooperativePathfinder.cs` |
@@ -129,8 +131,10 @@
 - 선택 상태 패널 최종 전체 PlayMode 219개 통과, 실패·건너뜀·판정 불가 0개, 279.46초. 전용 9개 포함. 새 패널 아래에 놓인 기존 빈 지도 드래그 검사 좌표를 보완하고 UI 밖 시작 여부를 검증했습니다. 관련 선택 12개 재검사 통과. 실제 Play에서 4명·400/400 → 375/400 체력 갱신과 이동 4명 표시를 확인했습니다. `Docs/Features/SelectionStatus.md` 참조.
 - 2026-10-12 선택 상태 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건, 14.238초, 132,866,130바이트. `Builds/SelectionStatus/ProjectF_SelectionStatus.exe` 시작 검사 통과, 로그 오류·예외 없음. Editor 재실행 후 BasicCombat 저장·Play 중지, HUD 1개, 누락 스크립트·HUD/선택 참조 0개 확인. 사용자 승인·main 병합 완료 (`54feab2`). `Assets/_Recovery`의 이전 세션 백업은 로컬 보존·커밋 제외.
 - 훈련 취소 전용 PlayMode 12개 통과, 실패·건너뜀·판정 불가 0개, 4.82초. 최종 전체 231개 통과, 실패·건너뜀·판정 불가 0개, 280.57초. CLI 상태가 실행 중으로 남아 Unity 최종 XML과 Editor 완료 로그로 확인했습니다. 기본 설정의 실제 버튼으로 목재 80→60→80·병력 4명 유지·훈련 버튼 복귀를 확인. `Docs/Features/RecruitmentCancel.md` 참조.
-- 2026-10-12 훈련 취소 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건, 12.470초, 132,866,674바이트. `Builds/RecruitmentCancel/ProjectF_RecruitmentCancel.exe` 시작 검사 통과, 로그 오류·예외 없음. BasicCombat 저장·Play 중지, 누락 스크립트·선택/HUD/훈련 참조 0개. 사용자 확인 대기.
-- PlayMode 테스트: 이동·카메라 29개 + 기본 전투 14개 + 적 AI 13개 + 침공 12개 + 건설 12개 + 철거 13개 + 벽 전투 16개 + 목재 채집 15개 + 반복 침공 10개 + 병력 충원 12개 + 벽 수리 14개 + 집결 지점 14개 + 추가 선택 12개 + 정지 명령 11개 + 부대 번호 13개 + 상태 패널 9개 + 훈련 취소 12개
+- 2026-10-12 훈련 취소 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건, 12.470초, 132,866,674바이트. `Builds/RecruitmentCancel/ProjectF_RecruitmentCancel.exe` 시작 검사 통과, 로그 오류·예외 없음. BasicCombat 저장·Play 중지, 누락 스크립트·선택/HUD/훈련 참조 0개. 사용자 승인·main 병합 완료 (`0bf400a`).
+- 2026-10-13 일시정지 전용 PlayMode 11개 통과, 실패·건너뜀·판정 불가 0개, 12.57초. 최종 전체 242개 통과, 실패·건너뜀·판정 불가 0개, 297.52초. 실제 Space 입력으로 남은 훈련 시간 보관·재개와 정지 화면 확인. `Docs/Features/GamePause.md` 참조.
+- 일시정지 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건, 13.798초, 132,873,114바이트. `Builds/GamePause/ProjectF_GamePause.exe` 시작 검사 통과, 로그 오류·예외 없음. BasicCombat 저장·Play 중지, 누락 스크립트·선택/HUD/훈련/일시정지 참조 0개, GamePause와 EventSystem 각 1개. 사용자 확인 대기.
+- PlayMode 테스트: 이동·카메라 29개 + 기본 전투 14개 + 적 AI 13개 + 침공 12개 + 건설 12개 + 철거 13개 + 벽 전투 16개 + 목재 채집 15개 + 반복 침공 10개 + 병력 충원 12개 + 벽 수리 14개 + 집결 지점 14개 + 추가 선택 12개 + 정지 명령 11개 + 부대 번호 13개 + 상태 패널 9개 + 훈련 취소 12개 + 일시정지 11개
 - 벽 돌파의 도착 검사는 AI 설정 `ReturnTolerance`를 사용한다. 이전 고정 `x < -5.5` 조건은 기본 허용 거리 0.6과 맞지 않아 정상 Guarding에서도 간헐적으로 실패했다. 집결 통합 과정에서 바로잡고 판단 시점 13가지를 검사하는 회귀 사례를 추가했다. 전투 런타임 변경 없음.
 - 2026-10-06 목재 채집 최종 전체 123개 통과, 실패·건너뜀 0개, 199.91초. 실제 기본 설정의 자원 증가·소진·추가 건설·침공 취소 확인. `Docs/Features/WoodGathering.md` 참조. 승인 후 main 병합 완료 (`e5e4642`).
 - 목재 채집 Windows x64 빌드 성공, 오류 0개·기존 경고 501개, 24.410초, 132,827,202바이트. `Builds/WoodGathering/ProjectF_WoodGathering.exe` 시작 검사에서 엔진·입력 초기화와 프로세스 유지, 시작 로그 오류·예외 없음 확인.

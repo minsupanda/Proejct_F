@@ -1,6 +1,6 @@
 # 훈련 취소·목재 환불
 
-상태: 구현·검증 완료, 사용자 확인 대기. 브랜치 `codex/recruitment-cancel`, 승인된 상태 패널의 main 병합 `54feab2`에서 분기했습니다. 사용자 확인 후 main에 병합합니다.
+상태: 사용자 승인 완료. 구현 `15b2eeb`, main 병합 `0bf400a`, GitHub 반영 완료. 브랜치 `codex/recruitment-cancel`은 승인된 상태 패널의 main 병합 `54feab2`에서 분기했습니다.
 
 ## 사용법
 

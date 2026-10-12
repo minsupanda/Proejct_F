@@ -8,7 +8,7 @@ namespace ProjectF.Input
     {
         private InputActionMap actions;
         public const int ControlGroupCount = 9;
-        private InputAction point, select, command, pan, zoom, cancel, additiveSelection, stop, storeGroup;
+        private InputAction point, select, command, pan, zoom, cancel, additiveSelection, stop, storeGroup, pause;
         private readonly InputAction[] groups = new InputAction[ControlGroupCount];
         private bool focused = true;
 
@@ -22,6 +22,7 @@ namespace ProjectF.Input
         public bool CommandHeld => Ready && command.IsPressed();
         public bool CancelPressed => Ready && cancel.WasPressedThisFrame();
         public bool StopPressed => Ready && stop.WasPressedThisFrame();
+        public bool PausePressed => Ready && pause.WasPressedThisFrame();
         public bool StoreGroupHeld => Ready && storeGroup.IsPressed();
         /// <summary>Zero-based slot pressed this frame, or -1. Lowest number wins simultaneous presses.</summary>
         public int GroupPressed
@@ -49,6 +50,7 @@ namespace ProjectF.Input
             additiveSelection = actions.AddAction("AdditiveSelection", InputActionType.Button, "<Keyboard>/leftShift");
             additiveSelection.AddBinding("<Keyboard>/rightShift");
             stop = actions.AddAction("Stop", InputActionType.Button, "<Keyboard>/s");
+            pause = actions.AddAction("Pause", InputActionType.Button, "<Keyboard>/space");
             storeGroup = actions.AddAction("StoreGroup", InputActionType.Button, "<Keyboard>/leftCtrl");
             storeGroup.AddBinding("<Keyboard>/rightCtrl");
             for (int i = 0; i < groups.Length; i++)
