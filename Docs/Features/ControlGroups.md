@@ -1,6 +1,6 @@
 # 부대 번호 저장·호출
 
-상태: 구현·검증 완료, 사용자 확인 대기. 브랜치 `codex/control-groups`, 승인된 정지 명령의 main 병합 `567f4ee`에서 분기했습니다. 사용자 최종 확인 후 main에 병합합니다.
+상태: 사용자 승인·main 병합 완료. 브랜치 `codex/control-groups`, 승인된 정지 명령의 main 병합 `567f4ee`에서 분기했습니다. 구현 `92d5ca1`, main 병합 `8f6eaa3`, GitHub 반영 완료.
 
 ## 사용법
 

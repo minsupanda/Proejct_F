@@ -60,6 +60,8 @@ namespace ProjectF.Tests
         }
         private IEnumerator Drag(Vector2 a, Vector2 b)
         {
+            yield return Pointer(Screen(a));
+            Assert.That(commands.PointerOverUI(), Is.False, "World selection gestures must start outside the HUD.");
             yield return Pointer(Screen(a), 1); yield return Pointer(Screen(b), 1);
             Assert.That(commands.IsDragging, Is.True); yield return Pointer(Screen(b));
         }
@@ -103,7 +105,8 @@ namespace ProjectF.Tests
             yield return Click(units[0].Position); yield return Keys(Key.LeftShift);
             yield return DragAll(false); Expect(units);
             yield return DragAll(true); Expect(units);
-            yield return Drag(new Vector2(-18, 5), new Vector2(-16, 7)); Expect(units);
+            // Keep the empty-area gesture below the selection status panel.
+            yield return Drag(new Vector2(-12, -4), new Vector2(-10, -3)); Expect(units);
         }
         [UnityTest]
         public IEnumerator NormalClickAndDragStillReplaceAndEmptyClears()
