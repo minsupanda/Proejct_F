@@ -22,9 +22,9 @@ namespace ProjectF.Combat
         private readonly Collider2D[] overlaps = new Collider2D[16];
         private readonly ContactFilter2D filter = new ContactFilter2D { useTriggers = false };
         private readonly List<UnitCombat> recruits = new List<UnitCombat>(8);
-        private bool initialized, starting;
+        private bool initialized, changingSlot;
         private float nextExitCheck, nextRosterCheck;
-        private int lastCount, serial;
+        private int lastCount, serial, paidWood;
         public event Action Changed;
         public RecruitmentSettings Settings => settings;
         public RecruitmentState State { get; private set; }
@@ -35,8 +35,10 @@ namespace ProjectF.Combat
         public int AlliedCount => invasion != null ? invasion.DefenderCount : 0;
         public bool PreparationAvailable => initialized && isActiveAndEnabled && invasion != null
             && invasion.isActiveAndEnabled && invasion.State == InvasionState.Ready && Time.timeScale > 0;
-        public bool CanTrain => PreparationAvailable && !starting && !IsTraining && stockpile.isActiveAndEnabled
+        public bool CanTrain => PreparationAvailable && !changingSlot && !IsTraining && stockpile.isActiveAndEnabled
             && AlliedCount < settings.MaximumAllies && stockpile.Wood >= settings.WoodCost;
+        public int CancellationRefund => IsTraining ? paidWood : 0;
+        public bool CanCancelTraining => PreparationAvailable && !changingSlot && IsTraining && stockpile.CanAddWood(paidWood);
 
         private void OnEnable()
         {
@@ -66,15 +68,29 @@ namespace ProjectF.Combat
         public bool TryTrain()
         {
             if (!CanTrain) return false;
-            starting = true;
+            changingSlot = true;
             // Set the slot before spending: resource listeners cannot queue a second purchase.
             IsTraining = true; RemainingSeconds = settings.TrainingSeconds; nextExitCheck = 0;
+            paidWood = settings.WoodCost;
             bool paid;
-            try { paid = stockpile.TrySpendWood(settings.WoodCost); }
-            finally { starting = false; }
-            if (!paid) { IsTraining = false; RemainingSeconds = 0; }
+            try { paid = stockpile.TrySpendWood(paidWood); }
+            finally { changingSlot = false; }
+            if (!paid) { IsTraining = false; RemainingSeconds = 0; paidWood = 0; }
             OnContextChanged();
             return paid;
+        }
+        /// <summary>Cancel the pending slot and refund its original payment, only during preparation.</summary>
+        public bool TryCancelTraining()
+        {
+            if (!CanCancelTraining) return false;
+            changingSlot = true;
+            try { return stockpile.TryAddWood(paidWood, ClearTrainingSlot); }
+            finally { changingSlot = false; OnContextChanged(); }
+        }
+        private void ClearTrainingSlot()
+        {
+            IsTraining = false; RemainingSeconds = 0; paidWood = 0;
+            nextExitCheck = 0; State = RecruitmentState.Idle;
         }
         public RallyPointResult ValidateRallyPoint(Vector2 point)
         {
@@ -157,7 +173,7 @@ namespace ProjectF.Combat
                 recruit.gameObject.SetActive(true);
                 // Issue once at deployment. Later edits affect only future recruits, never player orders.
                 if (HasRallyPoint) recruit.Unit.MoveTo(RallyPoint);
-                IsTraining = false; RemainingSeconds = 0; State = RecruitmentState.Idle;
+                ClearTrainingSlot();
                 invasion.RegisterDefender(recruit);
                 lastCount = AlliedCount;
                 Changed?.Invoke();

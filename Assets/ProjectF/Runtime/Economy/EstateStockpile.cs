@@ -12,11 +12,14 @@ namespace ProjectF.Economy
         private void Awake() => Wood = Mathf.Max(0, startingWood);
         private void Start() => Changed?.Invoke();
         public bool CanAddWood(int amount) => isActiveAndEnabled && amount > 0 && Wood <= int.MaxValue - amount;
-        public bool TryAddWood(int amount)
+        public bool TryAddWood(int amount) => TryAddWood(amount, null);
+        // Commit a refund's owning state before observers see the new balance.
+        internal bool TryAddWood(int amount, Action commit)
         {
             if (!CanAddWood(amount)) return false;
             Wood += amount;
-            Changed?.Invoke();
+            try { commit?.Invoke(); }
+            finally { Changed?.Invoke(); }
             return true;
         }
         public bool TrySpendWood(int amount) => TrySpendWood(amount, null);

@@ -11,18 +11,25 @@ namespace ProjectF.Combat
         [SerializeField] private Text buttonLabel;
         private int seconds = -1;
         private bool preparation;
-        private void OnEnable() { recruitment.Changed += Refresh; button.onClick.AddListener(Train); Refresh(); }
-        private void OnDisable() { recruitment.Changed -= Refresh; button.onClick.RemoveListener(Train); }
-        private void Train() => recruitment.TryTrain();
+        private bool canAct;
+        private bool CanAct => recruitment.IsTraining ? recruitment.CanCancelTraining : recruitment.CanTrain;
+        private void OnEnable() { recruitment.Changed += Refresh; button.onClick.AddListener(OnButtonClicked); Refresh(); }
+        private void OnDisable() { recruitment.Changed -= Refresh; button.onClick.RemoveListener(OnButtonClicked); }
+        private void OnButtonClicked()
+        {
+            if (recruitment.IsTraining) recruitment.TryCancelTraining();
+            else recruitment.TryTrain();
+        }
         private void Update()
         {
-            if (seconds != Mathf.CeilToInt(recruitment.RemainingSeconds) || preparation != recruitment.PreparationAvailable) Refresh();
+            if (seconds != Mathf.CeilToInt(recruitment.RemainingSeconds) || preparation != recruitment.PreparationAvailable
+                || (recruitment.IsTraining && canAct != recruitment.CanCancelTraining)) Refresh();
         }
         private void Refresh()
         {
             seconds = Mathf.CeilToInt(recruitment.RemainingSeconds); preparation = recruitment.PreparationAvailable;
-            button.interactable = recruitment.CanTrain;
-            buttonLabel.text = recruitment.IsTraining ? "TRAINING" : "TRAIN SOLDIER";
+            canAct = CanAct; button.interactable = canAct;
+            buttonLabel.text = recruitment.IsTraining ? "CANCEL +" + recruitment.CancellationRefund : "TRAIN SOLDIER";
             string hint = "Ready / " + recruitment.Settings.TrainingSeconds.ToString("0.#") + "s";
             if (recruitment.IsTraining)
             {
