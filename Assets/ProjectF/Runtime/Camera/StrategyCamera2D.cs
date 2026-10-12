@@ -19,7 +19,7 @@ namespace ProjectF.CameraSystem
 
         private void LateUpdate()
         {
-            if (!input.Ready) { panning = false; return; }
+            if (!input.Ready || Time.timeScale <= 0) { panning = false; return; }
             Vector2 pointer = input.Pointer;
             bool canStart = view.pixelRect.Contains(pointer) && !commands.PointerOverUI() && !input.SelectHeld;
             if (input.PanHeld)
