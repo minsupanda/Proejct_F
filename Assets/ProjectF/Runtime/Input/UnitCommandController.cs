@@ -117,8 +117,11 @@ namespace ProjectF.Input
                 }
                 else if (!input.SelectHeld) CancelDrag();
             }
-            if (input.CommandPressed && insideView && !selecting && !PointerOverUI())
-                IssueCommand(worldCamera.ScreenToWorldPoint(pointer));
+            if (input.CommandPressed && insideView && !selecting && Time.timeScale > 0 && !PointerOverUI())
+            {
+                if (input.AttackMoveHeld) IssueMove(worldCamera.ScreenToWorldPoint(pointer), true);
+                else IssueCommand(worldCamera.ScreenToWorldPoint(pointer));
+            }
         }
 
         private void Select(Vector2 end)
@@ -222,7 +225,7 @@ namespace ProjectF.Input
                 if (unit.TryGetComponent<UnitCombat>(out var combat)) combat.Attack(target);
         }
 
-        private void IssueMove(Vector2 target)
+        private void IssueMove(Vector2 target, bool attackMove = false)
         {
             if (selected.Count == 0) return;
             target.x = Mathf.Clamp(target.x, movementBounds.xMin, movementBounds.xMax);
@@ -230,7 +233,14 @@ namespace ProjectF.Input
             // Everyone shares the clicked gathering point. Nearby units claim inner spaces
             // first; navigation allocates non-overlapping arrival positions outwards.
             selected.Sort((a, b) => (a.Position - target).sqrMagnitude.CompareTo((b.Position - target).sqrMagnitude));
-            foreach (var unit in selected) unit.MoveTo(target);
+            foreach (var unit in selected)
+            {
+                if (attackMove)
+                {
+                    if (unit.TryGetComponent<AttackMoveOrder>(out var advance)) advance.Begin(target);
+                }
+                else unit.MoveTo(target);
+            }
         }
 
         private void DrawBox(Vector2 end)

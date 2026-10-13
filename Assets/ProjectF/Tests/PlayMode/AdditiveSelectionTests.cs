@@ -56,6 +56,8 @@ namespace ProjectF.Tests
         }
         private IEnumerator Click(Vector2 world, ushort button = 1)
         {
+            yield return Pointer(Screen(world));
+            Assert.That(commands.PointerOverUI(), Is.False, "World clicks must target uncovered ground or units.");
             yield return Pointer(Screen(world), button); yield return Pointer(Screen(world));
         }
         private IEnumerator Drag(Vector2 a, Vector2 b)
@@ -94,7 +96,7 @@ namespace ProjectF.Tests
         public IEnumerator EmptyOrEnemyShiftClickPreservesSelection()
         {
             yield return Click(units[0].Position); yield return Keys(Key.LeftShift);
-            yield return Click(new Vector2(-16, 5)); Expect(units[0]);
+            yield return Click(new Vector2(-12, -4)); Expect(units[0]);
             CombatTestScene.AddGuards(); yield return null;
             var enemy = Object.FindObjectsByType<UnitCombat>(FindObjectsSortMode.None).First(c => c.Faction == UnitFaction.Hostile);
             yield return Click(enemy.Unit.Position); Expect(units[0]);
@@ -114,7 +116,7 @@ namespace ProjectF.Tests
             yield return Keys(Key.LeftShift); yield return DragAll(false); Expect(units);
             yield return Keys(); yield return Click(units[1].Position); Expect(units[1]);
             yield return Drag(units[0].Position - Vector2.one * .65f, units[0].Position + Vector2.one * .65f); Expect(units[0]);
-            yield return Click(new Vector2(-16, 5)); Expect();
+            yield return Click(new Vector2(-12, -4)); Expect();
         }
         [UnityTest]
         public IEnumerator GestureKeepsModifierFromMouseDown()
@@ -188,7 +190,8 @@ namespace ProjectF.Tests
             yield return Keys(Key.LeftShift); yield return Click(units[1].Position);
             Assert.That(units[0].CommandOrder, Is.EqualTo(order));
             yield return Click(units[0].Position); Expect(units[1]);
-            var next = new Vector2(-16, 5); yield return Click(next, 2);
+            // The expanded selection panel covers (-16, 5); issue this world order below it.
+            var next = new Vector2(-12, -4); yield return Click(next, 2);
             Assert.That(Vector2.Distance(units[1].RequestedDestination, next), Is.LessThan(.02f));
             Assert.That(units[0].CommandOrder, Is.EqualTo(order));
             Assert.That(units[2].HasDestination, Is.False);

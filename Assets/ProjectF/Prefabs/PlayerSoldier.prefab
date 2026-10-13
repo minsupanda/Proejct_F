@@ -515,6 +515,7 @@ GameObject:
   - component: {fileID: 7396925958087983320}
   - component: {fileID: 5223845042269829026}
   - component: {fileID: 6130197888835053946}
+  - component: {fileID: 1382291116340541190}
   m_Layer: 0
   m_Name: PlayerSoldier
   m_TagString: Untagged
@@ -678,6 +679,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectF.Runtime::ProjectF.Economy.WoodGathererView
   label: {fileID: 3636696870106700681}
+--- !u!114 &1382291116340541190
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1829094102342498400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80e309ae80624e14e9a6c78ef8ce221c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectF.Runtime::ProjectF.Combat.AttackMoveOrder
+  settings: {fileID: 11400000, guid: aeee7de70eb6b9b4fbda1adf7151515d, type: 2}
 --- !u!1 &2410667553908474809
 GameObject:
   m_ObjectHideFlags: 0
