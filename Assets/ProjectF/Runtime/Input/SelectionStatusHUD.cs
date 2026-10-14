@@ -17,11 +17,11 @@ namespace ProjectF.Input
 
         private struct Summary
         {
-            public int Count, Combatants, Moving, Attacking, Gathering, Idle;
+            public int Count, Combatants, Moving, Attacking, Gathering, Idle, Advancing;
             public long Health, Maximum;
             public bool SameAs(Summary other) => Count == other.Count && Combatants == other.Combatants
                 && Moving == other.Moving && Attacking == other.Attacking && Gathering == other.Gathering
-                && Idle == other.Idle && Health == other.Health && Maximum == other.Maximum;
+                && Idle == other.Idle && Advancing == other.Advancing && Health == other.Health && Maximum == other.Maximum;
         }
 
         private void OnEnable() { hasPrevious = false; nextRefresh = 0; }
@@ -39,7 +39,7 @@ namespace ProjectF.Input
             panel.SetActive(current.Count > 0);
             if (current.Count == 0) { status.text = string.Empty; return; }
             string health = current.Combatants == 0 ? "N/A" : $"{current.Health} / {current.Maximum}";
-            status.text = $"SELECTED {current.Count}\nHEALTH {health}\nMOVE {current.Moving}  ATTACK {current.Attacking}\nGATHER {current.Gathering}  IDLE {current.Idle}";
+            status.text = $"SELECTED {current.Count}\nHEALTH {health}\nMOVE {current.Moving}  ATTACK {current.Attacking}\nGATHER {current.Gathering}  IDLE {current.Idle}\nADVANCE {current.Advancing}";
         }
 
         private Summary ReadSelection()
@@ -56,7 +56,8 @@ namespace ProjectF.Input
                 result.Count++;
                 if (combat != null) { result.Combatants++; result.Health += combat.Health; result.Maximum += combat.MaxHealth; }
                 // Classify the active order, including approach/pursuit, once per unit.
-                if (combat != null && (combat.Target != null || combat.WallTarget != null)) result.Attacking++;
+                if (unit.TryGetComponent<AttackMoveOrder>(out var advance) && advance.IsActive) result.Advancing++;
+                else if (combat != null && (combat.Target != null || combat.WallTarget != null)) result.Attacking++;
                 else if (unit.TryGetComponent<WoodGatherer>(out var gatherer) && gatherer.isActiveAndEnabled && gatherer.Target != null) result.Gathering++;
                 else if (unit.HasDestination) result.Moving++;
                 else result.Idle++;
