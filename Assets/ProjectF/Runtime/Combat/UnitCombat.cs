@@ -15,6 +15,7 @@ namespace ProjectF.Combat
         [SerializeField] private UnitFaction faction;
         [SerializeField] private bool retaliateWhenIdle;
         private CommandableUnit unit;
+        private SoldierProficiency proficiency;
         private readonly RaycastHit2D[] sightHits = new RaycastHit2D[32];
         private readonly ContactFilter2D sightFilter = new ContactFilter2D { useTriggers = false };
         private float nextAttackTime, nextPursuitTime, nextStrikeCheckTime;
@@ -28,6 +29,8 @@ namespace ProjectF.Combat
         public UnitFaction Faction => faction;
         public int Health { get; private set; }
         public int MaxHealth => settings != null ? settings.MaxHealth : 0;
+        public int AttackDamage => settings == null ? 0 : (int)Math.Min(int.MaxValue,
+            (long)settings.AttackDamage + (proficiency != null ? proficiency.DamageBonus : 0));
         public bool IsAlive => Health > 0 && isActiveAndEnabled && unit != null && unit.isActiveAndEnabled;
         public bool IsPlayerControlled => faction == UnitFaction.Player && IsAlive;
         public UnitCombat Target { get; private set; }
@@ -39,6 +42,7 @@ namespace ProjectF.Combat
         private void Awake()
         {
             unit = GetComponent<CommandableUnit>();
+            proficiency = GetComponent<SoldierProficiency>();
             if (settings == null)
             {
                 Debug.LogError("Unit combat settings are missing.", this);
@@ -140,7 +144,7 @@ namespace ProjectF.Combat
                     issuedPursuit = false;
                     nextAttackTime = Time.time + settings.AttackInterval;
                     var victim = Target;
-                    victim.ReceiveDamage(settings.AttackDamage, this);
+                    victim.ReceiveDamage(AttackDamage, this);
                     Attacked?.Invoke(victim);
                     if (!victim.IsAlive) CancelAttack();
                     return;
@@ -179,7 +183,7 @@ namespace ProjectF.Combat
                     unit.Stop(); issuedPursuit = false;
                     nextAttackTime = Time.time + settings.AttackInterval;
                     var victim = WallTarget;
-                    victim.ReceiveDamage(settings.AttackDamage, this);
+                    victim.ReceiveDamage(AttackDamage, this);
                     WallAttacked?.Invoke(victim);
                     if (!victim.IsAlive) CancelAttack();
                     return;

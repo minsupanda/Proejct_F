@@ -2665,6 +2665,7 @@ GameObject:
   - component: {fileID: 391753752}
   - component: {fileID: 391753751}
   - component: {fileID: 391753753}
+  - component: {fileID: 391753754}
   m_Layer: 0
   m_Name: Test Unit 4
   m_TagString: Untagged
@@ -2841,6 +2842,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectF.Runtime::ProjectF.Combat.AttackMoveOrder
   settings: {fileID: 11400000, guid: aeee7de70eb6b9b4fbda1adf7151515d, type: 2}
+--- !u!114 &391753754
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 391753744}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c43a4895e72c0e4589d751128cc2ce8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectF.Runtime::ProjectF.Combat.SoldierProficiency
+  settings: {fileID: 11400000, guid: 4793892c1710cdb488ad617234fea05d, type: 2}
 --- !u!1 &393076621
 GameObject:
   m_ObjectHideFlags: 0
@@ -3073,6 +3087,7 @@ GameObject:
   - component: {fileID: 404684350}
   - component: {fileID: 404684349}
   - component: {fileID: 404684351}
+  - component: {fileID: 404684352}
   m_Layer: 0
   m_Name: Test Unit 3
   m_TagString: Untagged
@@ -3249,6 +3264,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectF.Runtime::ProjectF.Combat.AttackMoveOrder
   settings: {fileID: 11400000, guid: aeee7de70eb6b9b4fbda1adf7151515d, type: 2}
+--- !u!114 &404684352
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 404684342}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c43a4895e72c0e4589d751128cc2ce8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectF.Runtime::ProjectF.Combat.SoldierProficiency
+  settings: {fileID: 11400000, guid: 4793892c1710cdb488ad617234fea05d, type: 2}
 --- !u!1 &422112226
 GameObject:
   m_ObjectHideFlags: 0
@@ -7135,6 +7163,7 @@ GameObject:
   - component: {fileID: 844428902}
   - component: {fileID: 844428901}
   - component: {fileID: 844428903}
+  - component: {fileID: 844428904}
   m_Layer: 0
   m_Name: Test Unit 2
   m_TagString: Untagged
@@ -7311,6 +7340,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectF.Runtime::ProjectF.Combat.AttackMoveOrder
   settings: {fileID: 11400000, guid: aeee7de70eb6b9b4fbda1adf7151515d, type: 2}
+--- !u!114 &844428904
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 844428894}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c43a4895e72c0e4589d751128cc2ce8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectF.Runtime::ProjectF.Combat.SoldierProficiency
+  settings: {fileID: 11400000, guid: 4793892c1710cdb488ad617234fea05d, type: 2}
 --- !u!1 &848891586
 GameObject:
   m_ObjectHideFlags: 0
@@ -17753,7 +17795,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 18, y: -100}
-  m_SizeDelta: {x: 230, y: 132}
+  m_SizeDelta: {x: 230, y: 154}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2019973920
 MonoBehaviour:

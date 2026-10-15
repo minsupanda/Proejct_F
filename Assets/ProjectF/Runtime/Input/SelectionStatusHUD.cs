@@ -18,10 +18,13 @@ namespace ProjectF.Input
         private struct Summary
         {
             public int Count, Combatants, Moving, Attacking, Gathering, Idle, Advancing;
+            public int Soldiers, Trained, Veterans, Experience, Threshold, Bonus;
             public long Health, Maximum;
             public bool SameAs(Summary other) => Count == other.Count && Combatants == other.Combatants
                 && Moving == other.Moving && Attacking == other.Attacking && Gathering == other.Gathering
-                && Idle == other.Idle && Advancing == other.Advancing && Health == other.Health && Maximum == other.Maximum;
+                && Idle == other.Idle && Advancing == other.Advancing && Health == other.Health && Maximum == other.Maximum
+                && Soldiers == other.Soldiers && Trained == other.Trained && Veterans == other.Veterans
+                && Experience == other.Experience && Threshold == other.Threshold && Bonus == other.Bonus;
         }
 
         private void OnEnable() { hasPrevious = false; nextRefresh = 0; }
@@ -40,6 +43,14 @@ namespace ProjectF.Input
             if (current.Count == 0) { status.text = string.Empty; return; }
             string health = current.Combatants == 0 ? "N/A" : $"{current.Health} / {current.Maximum}";
             status.text = $"SELECTED {current.Count}\nHEALTH {health}\nMOVE {current.Moving}  ATTACK {current.Attacking}\nGATHER {current.Gathering}  IDLE {current.Idle}\nADVANCE {current.Advancing}";
+            if (current.Count == 1 && current.Soldiers == 1)
+            {
+                string rank = current.Veterans > 0 ? "VETERAN" : current.Trained > 0 ? "TRAINED" : "RECRUIT";
+                string progress = current.Veterans > 0 ? "MAX" : $"{current.Experience}/{current.Threshold}";
+                status.text += $"\n{rank} {progress} ATK +{current.Bonus}";
+            }
+            else status.text += current.Soldiers == 0 ? "\nPROFICIENCY N/A"
+                : $"\nSKILL R{current.Soldiers - current.Trained - current.Veterans} T{current.Trained} V{current.Veterans}";
         }
 
         private Summary ReadSelection()
@@ -55,6 +66,14 @@ namespace ProjectF.Input
                 if (combat != null && !combat.IsPlayerControlled) continue;
                 result.Count++;
                 if (combat != null) { result.Combatants++; result.Health += combat.Health; result.Maximum += combat.MaxHealth; }
+                if (unit.TryGetComponent<SoldierProficiency>(out var proficiency) && proficiency.isActiveAndEnabled)
+                {
+                    result.Soldiers++;
+                    if (proficiency.Rank == ProficiencyRank.Trained) result.Trained++;
+                    if (proficiency.Rank == ProficiencyRank.Veteran) result.Veterans++;
+                    if (selected.Count == 1)
+                    { result.Experience = proficiency.Experience; result.Threshold = proficiency.NextThreshold; result.Bonus = proficiency.DamageBonus; }
+                }
                 // Classify the active order, including approach/pursuit, once per unit.
                 if (unit.TryGetComponent<AttackMoveOrder>(out var advance) && advance.IsActive) result.Advancing++;
                 else if (combat != null && (combat.Target != null || combat.WallTarget != null)) result.Attacking++;

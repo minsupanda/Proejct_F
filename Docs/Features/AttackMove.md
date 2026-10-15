@@ -1,6 +1,6 @@
 # 아군 공격 이동
 
-상태: 구현·검증 완료, 사용자 확인 대기. 브랜치 `codex/attack-move`, 승인된 일시정지의 main 병합 `a3b892d`에서 분기했습니다. 사용자 확인 후 main에 병합합니다.
+상태: 사용자 승인·main 병합 완료. 구현 `7faa959`, main 병합 `2a2dfe0`. 브랜치 `codex/attack-move`에서 구현했고 GitHub에 반영했습니다.
 
 ## 사용법
 
