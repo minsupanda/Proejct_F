@@ -102,7 +102,11 @@ namespace ProjectF.Tests
             var orders = units.Select(u => u.CommandOrder).ToArray();
             yield return Tap(Key.Digit1); Expect(units[0], units[1]);
             for (int i = 0; i < units.Length; i++) Assert.That(units[i].CommandOrder, Is.EqualTo(orders[i]));
-            yield return Pointer(Screen(new Vector2(-12, 4)), 2); yield return Pointer(Screen(Vector2.zero));
+            // Keep the world order below the selection panel, including its proficiency row.
+            var orderPoint = Screen(new Vector2(-12, -4));
+            yield return Pointer(orderPoint);
+            Assert.That(commands.PointerOverUI(), Is.False, "The movement order must target uncovered ground.");
+            yield return Pointer(orderPoint, 2); yield return Pointer(Screen(Vector2.zero));
             Assert.That(units[0].CommandOrder, Is.GreaterThan(orders[0])); Assert.That(units[1].CommandOrder, Is.GreaterThan(orders[1]));
             Assert.That(units[2].CommandOrder, Is.EqualTo(orders[2])); Assert.That(units[3].CommandOrder, Is.EqualTo(orders[3]));
         }
@@ -140,8 +144,11 @@ namespace ProjectF.Tests
         public IEnumerator LowestSlotWinsAndRecallConsumesSimultaneousRightClick()
         {
             yield return StorePair(); yield return Click(units[2].Position); yield return Tap(Key.LeftCtrl, Key.Digit2);
+            var orderPoint = Screen(new Vector2(-12, -4));
+            yield return Pointer(orderPoint);
+            Assert.That(commands.PointerOverUI(), Is.False, "Only group recall should consume this world order.");
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Digit2, Key.Digit1));
-            yield return Pointer(Screen(new Vector2(-12, 4)), 2); yield return Pointer(Screen(Vector2.zero));
+            yield return Pointer(orderPoint, 2); yield return Pointer(Screen(Vector2.zero));
             Expect(units[0], units[1]); Assert.That(units.All(u => !u.HasDestination), Is.True);
         }
         [UnityTest]
