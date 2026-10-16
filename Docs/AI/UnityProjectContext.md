@@ -5,10 +5,10 @@
 ## Project Summary
 
 - 프로젝트 루트: `C:/Unity/Proejct_F`
-- 현재 단계: 승인된 공격 이동 기반에 병사 전투 숙련도 통합
-- 현재 브랜치: `codex/soldier-proficiency` (승인 후 main에서 분기)
-- 마지막 분석: 2026-10-15 (Asia/Seoul)
-- 기준 커밋: `2a2dfe0` (공격 이동 main 병합) + 이번 숙련도 작업. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
+- 현재 단계: 승인된 병사 숙련도 기반에 영주 성장 포인트 통합
+- 현재 브랜치: `codex/lord-growth` (승인 후 main에서 분기)
+- 마지막 분석: 2026-10-16 (Asia/Seoul)
+- 기준 커밋: `f84079a` (병사 숙련도 main 병합) + 이번 영주 성장 작업. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
 
 ## Confirmed Environment
 
@@ -75,6 +75,8 @@
 - 메인 메뉴나 범용 게임 상태 시스템은 없음. `InvasionHUD`의 NEXT ROUND는 같은 씬에서 준비 상태로 전환하고, RESTART는 현재 씬을 비동기로 다시 불러옴
 - 일반 병사(초기 3명·충원 병사)는 적 명중 1회당 숙련도 1. 기본 5회 TRAINED +2, 15회 VETERAN +4 공격력, 최고 단계 누적 상한 15. 해당 단계에 도달한 타격 다음부터 보너스 적용. 생존 병사는 다음 침공까지 유지, 충원·재시작은 0. 영주/적은 제외. 선택 패널에 개인 진행도 또는 R/T/V 인원 표시. 연구·시설 기반 병종 전환과 별개.
 
+- 생존 영주가 침공 격퇴 시 차수당 성장 포인트 1개. 준비·격퇴 상태에서 무력(영주 공격력 +2) 또는 통솔(병력 상한 +1)에 1포인트씩 투자. 각 3단계. 다음 차수까지 유지, RESTART 초기화. 영주 사망·일시정지·침공 진행 중에는 투자 불가. 구매한 상한은 영주 사망에도 유지. 오른쪽 위 LORD GROWTH 패널.
+
 ## Architecture
 
 | Pattern | Finding | Confidence | Evidence |
@@ -99,6 +101,7 @@
 | Game pause | CommandInput의 Space 입력, GamePause의 시간·입력 점유, PauseHUD의 이벤트 기반 화면. 기존 FixedUpdate와 scaled time을 재사용하며 카메라에는 시간 정지 검사를 추가 | Confirmed | `GamePause`, `PauseHUD`, `GamePauseSetup`, `GamePauseTests` |
 | Attack move | AttackMoveOrder가 목적지·탐지·추격 전환 소유. UnitCombat과 중앙 길찾기 재사용. 주기적 주변 물리 조회와 재사용 목록, 첫 검사 시점 분산. 기존 이동/정지/공격/채집 알림으로 명령 대체 | Confirmed | `AttackMoveOrder`, `AttackMoveSettings`, `AttackMoveSetup`, `AttackMoveTests` |
 | Soldier proficiency | SoldierProficiency가 개인 진행도·단계·추가 피해 소유, ProficiencySettings에 밸런스 분리. UnitCombat.Attacked 구독으로 실제 명중만 누적하고 AttackDamage에서 기본값과 보너스 합산. 공유 에셋 변경·별도 프레임 검사 없음 | Confirmed | `SoldierProficiency`, `ProficiencySettings`, `ProficiencySetup`, `ProficiencyTests` |
+| Lord growth | LordGrowth가 차수별 격퇴 보상·포인트·투자를 소유. Invasion 변경 이벤트 재사용, 보상 중복·투자 재진입 차단. UnitCombat.AttackDamage와 UnitRecruitment.MaximumAllies에서 개인/영지 보너스 반영 | Confirmed | `LordGrowth`, `LordGrowthSettings`, `LordGrowthHUD`, `LordGrowthSetup`, `LordGrowthTests` |
 | Local perception | 2D 물리 영역 조회와 재사용 목록, 기본 0.25초 판단, 첫 탐지 시점 분산, 프로파일러 `ProjectF.EnemyAI.Detect` | Confirmed | `EnemyCombatAI.FindTarget` |
 | Central cooperative planning | `NavigationWorld2D`가 모든 유닛을 한 번에 우선순위별 계획하고 예약 | Confirmed | `NavigationWorld2D.cs` |
 | Space-time A* | 위치 노드뿐 아니라 0.1초 시간 단계를 상태에 포함하며 대기 행동 허용 | Confirmed | `CooperativePathfinder.cs` |
@@ -116,8 +119,11 @@
 - 공개 API보다 씬 내부 협력을 위한 `internal` 메서드와 읽기 전용 프로퍼티 사용
 
 ## Testing And Validation
+
+- 2026-10-16 영주 성장 최종 전체 PlayMode 279개 통과(기존 266개 + 전용 13개), 실패·건너뜀·판정 불가 0개, 346.03초. 전용 13개 4.41초, 선택 패널 9개 6.88초. 씬 종료 중 불필요한 성장 알림 제거와 정지 커서의 재시작 입력 초기화 수정 포함. 실제 화면의 통솔 클릭으로 포인트 1→0·병력 상한 8→9 확인. `Docs/Features/LordGrowth.md` 참조.
+- 영주 성장 Windows x64 빌드·시작 검사 통과. 오류 0개·기존 경고 유형 501건, 18.579초, 132,890,650바이트. BasicCombat 저장·Play 중지, 누락 스크립트·성장/HUD 참조 0개, 현재 Console 오류 0개. LordGrowth와 HUD 각 1개, 훈련소 연결·충원 프리팹 제외·설치 메뉴 중복 방지 확인. 사용자 확인 후 main 병합 예정.
 - 2026-10-15 병사 숙련도 최종 전체 PlayMode 266개 통과(기존 255개 + 전용 11개), 실패·건너뜀·판정 불가 0개, 343.37초. 부대 번호 검사 좌표의 UI 겹침을 보완하고 관련 13개 재검사 통과. 기본 설정 실제 Play의 0→5→15회·공격력 15→17→19·패널 갱신 확인. `Docs/Features/SoldierProficiency.md` 참조.
-- 병사 숙련도 Windows x64 빌드·시작 검사 통과, 오류 0개·기존 경고 유형 501건, 19.076초, 132,881,914바이트. Editor 재실행 후 BasicCombat 저장·Play 중지, 누락 스크립트·숙련도/선택 패널 참조 0개, 현재 콘솔 오류 0개. 초기 일반 병사 3명·충원 프리팹 1개 연결, 영주 제외. 사용자 확인 후 main 병합 예정.
+- 병사 숙련도 Windows x64 빌드·시작 검사 통과, 오류 0개·기존 경고 유형 501건, 19.076초, 132,881,914바이트. Editor 재실행 후 BasicCombat 저장·Play 중지, 누락 스크립트·숙련도/선택 패널 참조 0개, 현재 콘솔 오류 0개. 초기 일반 병사 3명·충원 프리팹 1개 연결, 영주 제외. 사용자 승인·main 병합 완료 (`f84079a`).
 
 - EditMode 테스트: 없음
 - 2026-10-07 방어벽 수리 전체 159개 통과, 실패·건너뜀 0개, 211.62초. 새 수리 14개 포함. 실제 기본 설정 Play에서 검증용 피해로 만든 체력 30/60 벽을 클릭해 체력 60·목재 70→65 확인. `Docs/Features/WallRepair.md` 참조. 승인 후 main 병합 완료 (`b8ad011`).
@@ -142,7 +148,7 @@
 - 일시정지 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건, 13.798초, 132,873,114바이트. `Builds/GamePause/ProjectF_GamePause.exe` 시작 검사 통과, 로그 오류·예외 없음. BasicCombat 저장·Play 중지, 누락 스크립트·선택/HUD/훈련/일시정지 참조 0개, GamePause와 EventSystem 각 1개. 사용자 승인·main 병합 완료 (`a3b892d`).
 - 공격 이동 전용 PlayMode 13개 통과(14.85초), 최종 전체 255개 통과(321.76초), 실패·건너뜀·판정 불가 0개. 상태 패널 아래의 기존 선택 검사 좌표를 모두 보완하고 공통 지도 클릭의 UI 밖 여부를 검증. 실제 Play의 자동 교전·원래 목적지 도착·ADVANCE 1→0 확인. `Docs/Features/AttackMove.md` 참조.
 - 공격 이동 Windows x64 빌드 성공, 오류 0개·기존 경고 유형 501건, 13.696초, 132,878,314바이트. `Builds/AttackMove/ProjectF_AttackMove.exe` 시작 검사 통과, 로그 오류·예외 없음. 2026-10-14 최종 확인: BasicCombat 저장·Play 중지, 누락 스크립트·공격 이동/선택 참조 0개, 초기 병사 4개·충원 프리팹 1개, EventSystem 1개, 현재 Console 오류 0개. 사용자 승인·main 병합 완료 (`2a2dfe0`).
-- PlayMode 테스트: 이동·카메라 29개 + 기본 전투 14개 + 적 AI 13개 + 침공 12개 + 건설 12개 + 철거 13개 + 벽 전투 16개 + 목재 채집 15개 + 반복 침공 10개 + 병력 충원 12개 + 벽 수리 14개 + 집결 지점 14개 + 추가 선택 12개 + 정지 명령 11개 + 부대 번호 13개 + 상태 패널 9개 + 훈련 취소 12개 + 일시정지 11개 + 공격 이동 13개 + 병사 숙련도 11개
+- PlayMode 테스트: 이동·카메라 29개 + 기본 전투 14개 + 적 AI 13개 + 침공 12개 + 건설 12개 + 철거 13개 + 벽 전투 16개 + 목재 채집 15개 + 반복 침공 10개 + 병력 충원 12개 + 벽 수리 14개 + 집결 지점 14개 + 추가 선택 12개 + 정지 명령 11개 + 부대 번호 13개 + 상태 패널 9개 + 훈련 취소 12개 + 일시정지 11개 + 공격 이동 13개 + 병사 숙련도 11개 + 영주 성장 13개
 - 벽 돌파의 도착 검사는 AI 설정 `ReturnTolerance`를 사용한다. 이전 고정 `x < -5.5` 조건은 기본 허용 거리 0.6과 맞지 않아 정상 Guarding에서도 간헐적으로 실패했다. 집결 통합 과정에서 바로잡고 판단 시점 13가지를 검사하는 회귀 사례를 추가했다. 전투 런타임 변경 없음.
 - 2026-10-06 목재 채집 최종 전체 123개 통과, 실패·건너뜀 0개, 199.91초. 실제 기본 설정의 자원 증가·소진·추가 건설·침공 취소 확인. `Docs/Features/WoodGathering.md` 참조. 승인 후 main 병합 완료 (`e5e4642`).
 - 목재 채집 Windows x64 빌드 성공, 오류 0개·기존 경고 501개, 24.410초, 132,827,202바이트. `Builds/WoodGathering/ProjectF_WoodGathering.exe` 시작 검사에서 엔진·입력 초기화와 프로세스 유지, 시작 로그 오류·예외 없음 확인.

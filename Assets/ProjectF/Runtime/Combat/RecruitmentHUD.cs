@@ -39,9 +39,9 @@ namespace ProjectF.Combat
                 else hint = "Training / " + seconds + "s left";
             }
             else if (!preparation) hint = "Train during preparation";
-            else if (recruitment.AlliedCount >= recruitment.Settings.MaximumAllies) hint = "Army capacity reached";
+            else if (recruitment.AlliedCount >= recruitment.MaximumAllies) hint = "Army capacity reached";
             else if (!recruitment.CanTrain) hint = "Not enough wood";
-            status.text = "ARMY " + recruitment.AlliedCount + "/" + recruitment.Settings.MaximumAllies
+            status.text = "ARMY " + recruitment.AlliedCount + "/" + recruitment.MaximumAllies
                 + " / " + recruitment.Settings.WoodCost + " WOOD\n" + hint;
         }
     }

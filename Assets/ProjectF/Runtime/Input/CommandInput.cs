@@ -43,6 +43,8 @@ namespace ProjectF.Input
         {
             actions = new InputActionMap("MouseCommands");
             point = actions.AddAction("Pointer", InputActionType.PassThrough, "<Mouse>/position");
+            // Initialize a stationary cursor after scene reload or input map re-enable.
+            point.wantsInitialStateCheck = true;
             select = actions.AddAction("Select", InputActionType.Button, "<Mouse>/leftButton");
             command = actions.AddAction("MoveCommand", InputActionType.Button, "<Mouse>/rightButton");
             pan = actions.AddAction("Pan", InputActionType.Button, "<Mouse>/middleButton");

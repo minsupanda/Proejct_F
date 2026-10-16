@@ -14,6 +14,7 @@ namespace ProjectF.Combat
     public sealed class UnitRecruitment : MonoBehaviour
     {
         [SerializeField] private RecruitmentSettings settings;
+        [SerializeField] private LordGrowth lordGrowth;
         [SerializeField] private EstateStockpile stockpile;
         [SerializeField] private PortalInvasion invasion;
         [SerializeField] private NavigationWorld2D navigation;
@@ -27,6 +28,8 @@ namespace ProjectF.Combat
         private int lastCount, serial, paidWood;
         public event Action Changed;
         public RecruitmentSettings Settings => settings;
+        public int MaximumAllies => settings != null ? Mathf.Min(64, settings.MaximumAllies
+            + (lordGrowth != null ? lordGrowth.CapacityBonus : 0)) : 0;
         public RecruitmentState State { get; private set; }
         public bool IsTraining { get; private set; }
         public float RemainingSeconds { get; private set; }
@@ -36,7 +39,7 @@ namespace ProjectF.Combat
         public bool PreparationAvailable => initialized && isActiveAndEnabled && invasion != null
             && invasion.isActiveAndEnabled && invasion.State == InvasionState.Ready && Time.timeScale > 0;
         public bool CanTrain => PreparationAvailable && !changingSlot && !IsTraining && stockpile.isActiveAndEnabled
-            && AlliedCount < settings.MaximumAllies && stockpile.Wood >= settings.WoodCost;
+            && AlliedCount < MaximumAllies && stockpile.Wood >= settings.WoodCost;
         public int CancellationRefund => IsTraining ? paidWood : 0;
         public bool CanCancelTraining => PreparationAvailable && !changingSlot && IsTraining && stockpile.CanAddWood(paidWood);
 
@@ -44,12 +47,14 @@ namespace ProjectF.Combat
         {
             if (invasion != null) invasion.Changed += OnContextChanged;
             if (stockpile != null) stockpile.Changed += OnContextChanged;
+            if (lordGrowth != null) lordGrowth.Changed += OnContextChanged;
             if (initialized) OnContextChanged();
         }
         private void OnDisable()
         {
             if (invasion != null) invasion.Changed -= OnContextChanged;
             if (stockpile != null) stockpile.Changed -= OnContextChanged;
+            if (lordGrowth != null) lordGrowth.Changed -= OnContextChanged;
             if (IsTraining) State = RecruitmentState.Suspended;
             Changed?.Invoke();
         }
@@ -152,7 +157,7 @@ namespace ProjectF.Combat
                 SetState(RecruitmentState.Training);
                 if (RemainingSeconds > 0) return;
             }
-            if (AlliedCount >= settings.MaximumAllies) { SetState(RecruitmentState.AtCapacity); return; }
+            if (AlliedCount >= MaximumAllies) { SetState(RecruitmentState.AtCapacity); return; }
             if (Time.time < nextExitCheck) return;
             nextExitCheck = Time.time + .5f;
             if (!TryDeploy()) SetState(RecruitmentState.ExitBlocked);
