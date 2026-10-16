@@ -138,7 +138,10 @@ namespace ProjectF.Tests
         {
             yield return SelectAll(); yield return SceneManager.LoadSceneAsync("BasicCombat"); BindHUD(); yield return Refresh();
             Assert.That(Object.FindObjectsByType<SelectionStatusHUD>(FindObjectsSortMode.None).Length, Is.EqualTo(1)); Assert.That(panel.activeSelf, Is.False);
-            var ally = Object.FindObjectsByType<UnitCombat>(FindObjectsSortMode.None).First(c => c.IsPlayerControlled);
+            // SelectAll leaves the mouse over Test Unit 4. Reload must read this stationary pointer.
+            var ally = GameObject.Find("Test Unit 4").GetComponent<UnitCombat>();
+            Assert.That(Object.FindAnyObjectByType<CommandInput>().Pointer, Is.EqualTo(Screen(ally.Unit.Position)),
+                "Reload must initialize the pointer even when the mouse has not moved.");
             yield return Click(ally.Unit.Position); yield return Refresh(); Contains("SELECTED 1"); Contains($"HEALTH {ally.Health} / {ally.MaxHealth}");
         }
         [UnityTest]

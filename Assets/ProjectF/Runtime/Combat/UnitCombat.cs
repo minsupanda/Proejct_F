@@ -16,6 +16,7 @@ namespace ProjectF.Combat
         [SerializeField] private bool retaliateWhenIdle;
         private CommandableUnit unit;
         private SoldierProficiency proficiency;
+        private LordGrowth lordGrowth;
         private readonly RaycastHit2D[] sightHits = new RaycastHit2D[32];
         private readonly ContactFilter2D sightFilter = new ContactFilter2D { useTriggers = false };
         private float nextAttackTime, nextPursuitTime, nextStrikeCheckTime;
@@ -30,7 +31,8 @@ namespace ProjectF.Combat
         public int Health { get; private set; }
         public int MaxHealth => settings != null ? settings.MaxHealth : 0;
         public int AttackDamage => settings == null ? 0 : (int)Math.Min(int.MaxValue,
-            (long)settings.AttackDamage + (proficiency != null ? proficiency.DamageBonus : 0));
+            (long)settings.AttackDamage + (proficiency != null ? proficiency.DamageBonus : 0)
+            + (lordGrowth != null ? lordGrowth.DamageBonus : 0));
         public bool IsAlive => Health > 0 && isActiveAndEnabled && unit != null && unit.isActiveAndEnabled;
         public bool IsPlayerControlled => faction == UnitFaction.Player && IsAlive;
         public UnitCombat Target { get; private set; }
@@ -43,6 +45,7 @@ namespace ProjectF.Combat
         {
             unit = GetComponent<CommandableUnit>();
             proficiency = GetComponent<SoldierProficiency>();
+            lordGrowth = GetComponent<LordGrowth>();
             if (settings == null)
             {
                 Debug.LogError("Unit combat settings are missing.", this);

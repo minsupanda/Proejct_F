@@ -5,6 +5,7 @@ Unity 6000.6.0f1 / 2D 전략 게임 프로토타입.
 ## 지금 확인할 기능
 
 Unity 상단 **Project F → Open Gameplay → Play**.
+영주가 살아 있는 상태로 침공을 격퇴하면 성장 포인트 1개를 받습니다. 오른쪽 위 **MARTIAL**(영주 공격력 +2) 또는 **LEADERSHIP**(병력 상한 +1)에 1포인트씩 투자하세요. 준비·격퇴 상태에서 가능하며 다음 차수까지 유지됩니다.
 일반 병사는 적에게 실제 명중할 때 숙련도가 쌓입니다. 기본 5회에 공격력 +2, 15회에 +4이며, 선택 패널 마지막 줄에서 단계와 진행도를 확인합니다. 생존 병사는 다음 침공에도 유지하고 새 충원 병사는 0부터 시작합니다.
 병사를 선택하고 **A를 누른 채 땅을 우클릭**하면 공격 이동합니다. 가까운 적과 싸운 뒤 원래 목적지로 계속 이동하며, 선택 패널의 **ADVANCE**에서 인원을 확인합니다. 일반 우클릭 명령이나 **S**로 대체·취소할 수 있습니다.
 **Space** 또는 오른쪽 위 **PAUSE / SPACE**로 게임을 일시정지합니다. **Space / RESUME**으로 기존 명령과 남은 시간부터 이어갑니다. 정지 중에는 지도 명령·카메라·건설·훈련·침공 버튼을 사용할 수 없습니다.
@@ -28,6 +29,7 @@ Unity 상단 **Project F → Open Gameplay → Play**.
 
 - [아군 공격 이동 사용법과 검증](Docs/Features/AttackMove.md)
 - [병사 전투 숙련도 사용법과 검증](Docs/Features/SoldierProficiency.md)
+- [영주 성장 포인트 사용법과 검증](Docs/Features/LordGrowth.md)
 - [일시정지·재개 사용법과 검증](Docs/Features/GamePause.md)
 - [훈련 취소·목재 환불 사용법과 검증](Docs/Features/RecruitmentCancel.md)
 - [선택 병사 상태 패널 사용법과 검증](Docs/Features/SelectionStatus.md)
