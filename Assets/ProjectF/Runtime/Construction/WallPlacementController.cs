@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace ProjectF.Construction
 {
-    public enum ConstructionMode { None, Build, Demolish, Repair }
+    public enum ConstructionMode { None, Build, Demolish, Repair, Farm }
     [DefaultExecutionOrder(-10)]
     public sealed class WallPlacementController : MonoBehaviour
     {
@@ -22,7 +22,8 @@ namespace ProjectF.Construction
         private int lastTargetHealth, lastTargetRefund;
         public event Action Changed;
         public ConstructionMode Mode { get; private set; }
-        public bool IsPlacing => Mode == ConstructionMode.Build;
+        public bool IsPlacing => Mode == ConstructionMode.Build || IsPlacingFarm;
+        public bool IsPlacingFarm => Mode == ConstructionMode.Farm;
         public bool IsDemolishing => Mode == ConstructionMode.Demolish;
         public bool IsRepairing => Mode == ConstructionMode.Repair;
         public bool IsEditing => Mode != ConstructionMode.None;
@@ -45,9 +46,15 @@ namespace ProjectF.Construction
         }
         public void Toggle()
         {
-            if (IsPlacing) { Cancel(); return; }
+            if (Mode == ConstructionMode.Build) { Cancel(); return; }
             if (!isActiveAndEnabled || !construction.CanConstruct || !construction.CanAfford) return;
             BeginMode(ConstructionMode.Build);
+        }
+        public void ToggleFarm()
+        {
+            if (IsPlacingFarm) { Cancel(); return; }
+            if (!isActiveAndEnabled || !construction.CanConstruct || !construction.CanAffordFarm) return;
+            BeginMode(ConstructionMode.Farm);
         }
         public void ToggleDemolition()
         {
@@ -111,16 +118,18 @@ namespace ProjectF.Construction
             {
                 lastCell = cell;
                 nextPreviewCheck = Time.time + .1f;
-                SetResult(construction.Validate(cell, out _));
+                SetResult(IsPlacingFarm ? construction.ValidateFarm(cell, out _) : construction.Validate(cell, out _));
                 preview.transform.position = new Vector3(cell.x, cell.y, -.4f);
-                preview.transform.localScale = new Vector3(construction.Footprint.x, construction.Footprint.y, 1);
+                Vector2 size = IsPlacingFarm ? construction.FarmFootprint : construction.Footprint;
+                preview.transform.localScale = new Vector3(size.x, size.y, 1);
                 preview.enabled = true;
             }
             if (input.SelectPressed)
             {
                 // Revalidate at the click, even when the preview is still green from a prior tick.
-                var result = construction.TryBuild(cell);
-                SetResult(result == PlacementResult.Available ? construction.Validate(cell, out _) : result);
+                var result = IsPlacingFarm ? construction.TryBuildFarm(cell) : construction.TryBuild(cell);
+                SetResult(result == PlacementResult.Available
+                    ? IsPlacingFarm ? construction.ValidateFarm(cell, out _) : construction.Validate(cell, out _) : result);
             }
         }
         private void UpdateDemolition()
@@ -150,7 +159,7 @@ namespace ProjectF.Construction
             if (target != null)
             {
                 preview.transform.position = target.transform.position + new Vector3(0, 0, -.4f);
-                preview.transform.localScale = new Vector3(construction.Footprint.x, construction.Footprint.y, 1);
+                preview.transform.localScale = new Vector3(target.Footprint.x, target.Footprint.y, 1);
                 properties.SetColor(colorId, state == DemolitionResult.Available ? new Color(1f, .65f, .15f) : new Color(.95f, .25f, .25f));
                 preview.SetPropertyBlock(properties);
             }
@@ -179,7 +188,7 @@ namespace ProjectF.Construction
             if (target != null)
             {
                 preview.transform.position = target.transform.position + new Vector3(0, 0, -.4f);
-                preview.transform.localScale = new Vector3(construction.Footprint.x, construction.Footprint.y, 1);
+                preview.transform.localScale = new Vector3(target.Footprint.x, target.Footprint.y, 1);
                 properties.SetColor(colorId, state == RepairResult.Available ? new Color(.25f, .8f, 1f)
                     : state == RepairResult.AlreadyHealthy ? new Color(.55f, .6f, .65f) : new Color(.95f, .25f, .25f));
                 preview.SetPropertyBlock(properties);

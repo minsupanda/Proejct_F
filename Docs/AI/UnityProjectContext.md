@@ -5,10 +5,12 @@
 ## Project Summary
 
 - 프로젝트 루트: `C:/Unity/Proejct_F`
-- 현재 단계: 영주 성장 포인트 사용자 승인·main 병합 완료. 다음 기능 미착수
-- 현재 브랜치: `main`
-- 마지막 분석: 2026-10-16 (Asia/Seoul)
-- 기준 구현: `7e5d869` (영주 성장), main 병합 완료. 승인 상태는 `Docs/DevelopmentProgress.md` 참조
+- 현재 단계: 농장 건설·식량 생산 구현·검증 완료, 식량 소비 연결 예정
+- 현재 브랜치: `codex/farm-production`
+- 마지막 분석: 2026-11-19 (Asia/Seoul)
+- 기준: `5e3354a` (영주 성장 main 병합). 현재 작업과 실행 검증의 한계는 `Docs/Features/FarmProduction.md` 참조
+- 사용자 지시 변경: 게임 완성까지 단계별 승인 없이 구현·검증·커밋·푸시·main 병합을 이어갑니다. 완료된 기능만 짧게 보고하고 필요한 2D 이미지는 제작합니다. 기존 승인 대기 원칙보다 이 지시가 우선합니다. 전체 남은 범위는 `Docs/Design/CompletionPlan.md` 참조.
+- 현재 환경: 2026-11-19 사용자가 로그인·Personal 라이선스 활성화를 완료했고 Unity 연결이 복구되었습니다. FarmSetup 실행·씬 연결 완료. 농장 전용 14개·전체 293개 검사, 실제 화면, Windows 빌드와 시작 검사 통과. 기존 501개 빌드 경고는 증가하지 않았습니다.
 
 ## Confirmed Environment
 

@@ -16,6 +16,7 @@ namespace ProjectF.Construction
         public int MaxHealth { get; private set; }
         public bool IsAlive => Health > 0 && !Retired && isActiveAndEnabled && shape != null && shape.enabled;
         internal Collider2D Shape => shape;
+        public Vector2 Footprint => shape != null ? (Vector2)shape.bounds.size : Vector2.zero;
         internal WallConstruction Owner { get; private set; }
         public int PaidWood { get; private set; }
         public int MaximumRefundWood { get; private set; }
