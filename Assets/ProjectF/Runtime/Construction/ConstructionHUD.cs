@@ -38,23 +38,23 @@ namespace ProjectF.Construction
         private void Refresh()
         {
             lastCanConstruct = construction.CanConstruct;
-            button.interactable = placement.IsPlacing || (construction.CanConstruct && construction.CanAfford);
-            buttonLabel.text = placement.IsPlacing ? "CANCEL BUILD" : "BUILD WALL";
+            button.interactable = placement.Mode == ConstructionMode.Build || (construction.CanConstruct && construction.CanAfford);
+            buttonLabel.text = placement.Mode == ConstructionMode.Build ? "CANCEL BUILD" : "BUILD WALL";
             if (demolishButton != null)
             {
                 demolishButton.interactable = placement.IsDemolishing || construction.CanConstruct;
-                demolishLabel.text = placement.IsDemolishing ? "CANCEL REMOVE" : "REMOVE WALL";
+                demolishLabel.text = placement.IsDemolishing ? "CANCEL REMOVE" : "REMOVE BUILDING";
             }
             if (repairButton != null)
             {
                 repairButton.interactable = placement.IsRepairing || construction.CanConstruct;
-                repairLabel.text = placement.IsRepairing ? "CANCEL REPAIR" : "REPAIR WALL";
+                repairLabel.text = placement.IsRepairing ? "CANCEL REPAIR" : "REPAIR BUILDING";
             }
             string hint = "Build before invasion";
             if (placement.IsRepairing)
             {
-                if (placement.RepairTarget == null) hint = "Point at a damaged wall / Esc: cancel";
-                else if (placement.RepairStatus == RepairResult.AlreadyHealthy) hint = "Wall is already at full health";
+                if (placement.RepairTarget == null) hint = "Point at a damaged building / Esc: cancel";
+                else if (placement.RepairStatus == RepairResult.AlreadyHealthy) hint = "Building is already at full health";
                 else
                 {
                     hint = "HP " + placement.RepairTarget.Health + "/" + placement.RepairTarget.MaxHealth
@@ -67,7 +67,7 @@ namespace ProjectF.Construction
                 if (placement.DemolitionStatus == DemolitionResult.RefundOverflow) hint = "Wood storage full";
                 else if (placement.DemolitionTarget != null)
                     hint = "Remove: +" + placement.DemolitionTarget.RefundWood + " wood / LMB";
-                else hint = "Point at a built wall / Esc: cancel";
+                else hint = "Point at a building / Esc: cancel";
             }
             else if (placement.IsPlacing)
             {
@@ -81,7 +81,8 @@ namespace ProjectF.Construction
                 }
             }
             else if (!construction.CanAfford) hint = "Not enough wood";
-            status.text = "WOOD " + stockpile.Wood + "  /  WALL " + construction.Settings.WallWoodCost + "  /  " + hint;
+            string item = placement.IsPlacingFarm ? "FARM " + construction.FarmSettings.WoodCost : "WALL " + construction.Settings.WallWoodCost;
+            status.text = "WOOD " + stockpile.Wood + "  /  " + item + "  /  " + hint;
         }
         private void Update()
         {

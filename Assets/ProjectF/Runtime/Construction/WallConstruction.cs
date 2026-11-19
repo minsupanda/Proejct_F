@@ -18,15 +18,22 @@ namespace ProjectF.Construction
         [SerializeField] private PortalInvasion invasion;
         [SerializeField] private NavigationWorld2D navigation;
         [SerializeField] private WallStructure wallPrefab;
+        [SerializeField] private WallStructure farmPrefab;
+        [SerializeField] private FarmSettings farmSettings;
         [SerializeField] private Transform structures;
         private readonly Collider2D[] overlaps = new Collider2D[16];
         private readonly ContactFilter2D filter = new ContactFilter2D { useTriggers = false };
         private Vector2 footprint;
+        private Vector2 farmFootprint;
         private bool initialized, placing;
         public event Action Changed;
         public ConstructionSettings Settings => settings;
         public Vector2 Footprint => footprint;
-        public bool CanConstruct => initialized && isActiveAndEnabled && stockpile.isActiveAndEnabled
+        public FarmSettings FarmSettings => farmSettings;
+        public Vector2 FarmFootprint => farmFootprint;
+        public bool HasFarmConfiguration => initialized && farmPrefab != null && farmSettings != null && farmFootprint.x > 0;
+        public bool CanAffordFarm => HasFarmConfiguration && stockpile != null && stockpile.Wood >= farmSettings.WoodCost;
+        public bool CanConstruct => initialized && isActiveAndEnabled && stockpile != null && stockpile.isActiveAndEnabled
             && Time.timeScale > 0 && invasion != null && invasion.isActiveAndEnabled && invasion.State == InvasionState.Ready;
         public bool CanAfford => stockpile != null && settings != null && stockpile.Wood >= settings.WallWoodCost;
 
@@ -54,38 +61,66 @@ namespace ProjectF.Construction
                 enabled = false;
                 return;
             }
+            // Farms opt in; older scenes keep the wall-only setup without migration requirements.
+            if (farmPrefab != null || farmSettings != null)
+            {
+                var farmShape = farmPrefab != null ? farmPrefab.GetComponent<BoxCollider2D>() : null;
+                if (farmSettings == null || farmShape == null || farmPrefab.gameObject.activeSelf
+                    || farmPrefab.GetComponent<FarmProduction>() == null || farmShape.isTrigger || farmShape.offset != Vector2.zero)
+                {
+                    Debug.LogError("Farm construction requires settings and an inactive farm prefab with a centered solid collider.", this);
+                    enabled = false; return;
+                }
+                farmFootprint = Vector2.Scale(farmShape.size, farmPrefab.transform.localScale);
+                if (farmFootprint.x <= 0 || farmFootprint.y <= 0)
+                { Debug.LogError("Farm footprint must be positive.", this); enabled = false; return; }
+            }
             initialized = true;
             Changed?.Invoke();
         }
 
         public PlacementResult Validate(Vector2 requested, out Vector2 snapped)
+            => ValidateStructure(requested, footprint, settings != null ? settings.WallWoodCost : 0, out snapped);
+
+        public PlacementResult ValidateFarm(Vector2 requested, out Vector2 snapped)
+        {
+            if (!HasFarmConfiguration) { snapped = requested; return PlacementResult.Unavailable; }
+            return ValidateStructure(requested, farmFootprint, farmSettings.WoodCost, out snapped);
+        }
+        private PlacementResult ValidateStructure(Vector2 requested, Vector2 size, int cost, out Vector2 snapped)
         {
             snapped = settings != null ? settings.Snap(requested) : requested;
             if (!CanConstruct || placing) return PlacementResult.Unavailable;
             if (!float.IsFinite(snapped.x) || !float.IsFinite(snapped.y)) return PlacementResult.OutsideTerritory;
-            Vector2 half = footprint * .5f;
+            Vector2 half = size * .5f;
             Rect area = settings.Territory;
             if (snapped.x - half.x < area.xMin || snapped.x + half.x > area.xMax
                 || snapped.y - half.y < area.yMin || snapped.y + half.y > area.yMax) return PlacementResult.OutsideTerritory;
-            if (!CanAfford) return PlacementResult.InsufficientWood;
+            if (stockpile.Wood < cost) return PlacementResult.InsufficientWood;
             Physics2D.SyncTransforms();
             // Every solid collider blocks placement, including moving units. Saturation is blocked.
-            if (Physics2D.OverlapBox(snapped, footprint + Vector2.one * .06f, 0, filter, overlaps) > 0)
+            if (Physics2D.OverlapBox(snapped, size + Vector2.one * .06f, 0, filter, overlaps) > 0)
                 return PlacementResult.Occupied;
             return PlacementResult.Available;
         }
 
         public PlacementResult TryBuild(Vector2 requested)
+            => TryBuildStructure(requested, false);
+        public PlacementResult TryBuildFarm(Vector2 requested)
+            => TryBuildStructure(requested, true);
+        private PlacementResult TryBuildStructure(Vector2 requested, bool farm)
         {
-            var result = Validate(requested, out var position);
+            Vector2 position;
+            var result = farm ? ValidateFarm(requested, out position) : Validate(requested, out position);
             if (result != PlacementResult.Available) return result;
             placing = true;
             try
             {
-                var wall = Instantiate(wallPrefab, new Vector3(position.x, position.y, 0), Quaternion.identity, structures);
-                int cost = settings.WallWoodCost;
+                var wall = Instantiate(farm ? farmPrefab : wallPrefab, new Vector3(position.x, position.y, 0), Quaternion.identity, structures);
+                int cost = farm ? farmSettings.WoodCost : settings.WallWoodCost;
                 // Keep the refund agreed at purchase, even if designers later change the settings.
                 wall.Initialize(navigation, this, settings.GetDemolitionRefund(cost), cost);
+                if (farm) wall.GetComponent<FarmProduction>().Initialize(stockpile, invasion, farmSettings);
                 if (!stockpile.TrySpendWood(cost))
                 {
                     Destroy(wall.gameObject);
