@@ -78,7 +78,7 @@ namespace ProjectF.Editor
             var label = Text(UI("Label", buttonRect, new Vector2(.5f,.5f), Vector2.zero, new Vector2(162,38)), 16);
             label.text = "TRAIN SOLDIER"; label.alignment = TextAnchor.MiddleCenter;
             var status = Text(UI("Status", hudRoot, new Vector2(0,.5f), new Vector2(178,0), new Vector2(298,46)), 14);
-            status.text = "ARMY 4/8 / 20 WOOD\nReady / 5s";
+            status.text = "ARMY 4/8 / 20W + 4F\nNeed food / build a farm";
             var hud = hudRoot.gameObject.AddComponent<RecruitmentHUD>();
             Ref(hud, "recruitment", recruitment); Ref(hud, "status", status); Ref(hud, "button", button); Ref(hud, "buttonLabel", label);
             Undo.CollapseUndoOperations(group);

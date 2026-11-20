@@ -37,6 +37,8 @@ namespace ProjectF.Tests
         {
             fixture = new InputTestFixture(); fixture.Setup(); mouse = InputSystem.AddDevice<Mouse>(); keyboard = InputSystem.AddDevice<Keyboard>();
             yield return SceneManager.LoadSceneAsync("BasicCombat");
+            // This fixture covers existing behavior; supply the new recruitment prerequisite.
+            Assert.That(Object.FindAnyObjectByType<ProjectF.Economy.EstateStockpile>().TryAddFood(100), Is.True);
             recruitment = Object.FindAnyObjectByType<UnitRecruitment>(); controller = Object.FindAnyObjectByType<RecruitmentRallyController>();
             invasion = Object.FindAnyObjectByType<PortalInvasion>(); stock = Object.FindAnyObjectByType<EstateStockpile>();
             settings = Object.Instantiate(recruitment.Settings); Set(settings, "trainingSeconds", .1f); Set(recruitment, "settings", settings);

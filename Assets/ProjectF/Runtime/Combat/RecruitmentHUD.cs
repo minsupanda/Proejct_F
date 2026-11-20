@@ -29,7 +29,7 @@ namespace ProjectF.Combat
         {
             seconds = Mathf.CeilToInt(recruitment.RemainingSeconds); preparation = recruitment.PreparationAvailable;
             canAct = CanAct; button.interactable = canAct;
-            buttonLabel.text = recruitment.IsTraining ? "CANCEL +" + recruitment.CancellationRefund : "TRAIN SOLDIER";
+            buttonLabel.text = recruitment.IsTraining ? "CANCEL / REFUND" : "TRAIN SOLDIER";
             string hint = "Ready / " + recruitment.Settings.TrainingSeconds.ToString("0.#") + "s";
             if (recruitment.IsTraining)
             {
@@ -40,9 +40,13 @@ namespace ProjectF.Combat
             }
             else if (!preparation) hint = "Train during preparation";
             else if (recruitment.AlliedCount >= recruitment.MaximumAllies) hint = "Army capacity reached";
-            else if (!recruitment.CanTrain) hint = "Not enough wood";
+            else if (!recruitment.HasWood) hint = "Need wood / gather trees";
+            else if (!recruitment.HasFood) hint = "Need food / build a farm";
+            string cost = recruitment.IsTraining
+                ? "+" + recruitment.CancellationRefund + "W + " + recruitment.CancellationFoodRefund + "F"
+                : recruitment.Settings.WoodCost + "W + " + recruitment.Settings.FoodCost + "F";
             status.text = "ARMY " + recruitment.AlliedCount + "/" + recruitment.MaximumAllies
-                + " / " + recruitment.Settings.WoodCost + " WOOD\n" + hint;
+                + " / " + cost + "\n" + hint;
         }
     }
 }

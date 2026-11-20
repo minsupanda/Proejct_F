@@ -37,6 +37,8 @@ namespace ProjectF.Economy
             string hint = !lastCanConstruct ? "Harvest during preparation"
                 : !stockpile.CanAddFood(settings.FoodPerHarvest) ? "Storage full / harvest held"
                 : "Build farms to produce food";
+            if (stockpile.ReservedFoodCapacity > 0)
+                hint = "Refund space held: " + stockpile.ReservedFoodCapacity;
             status.text = "FOOD " + stockpile.Food + " / " + stockpile.FoodCapacity
                 + "\nFARM " + settings.WoodCost + " WOOD / +" + settings.FoodPerHarvest + " FOOD / " + settings.HarvestSeconds.ToString("0.#") + "s"
                 + "\n" + hint;
