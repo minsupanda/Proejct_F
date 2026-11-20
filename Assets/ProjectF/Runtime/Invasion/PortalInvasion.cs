@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ProjectF.Combat;
+using ProjectF.Economy;
 using ProjectF.Player;
 using UnityEngine;
 
@@ -17,6 +18,7 @@ namespace ProjectF.Invasion
         [SerializeField] private Transform[] exits;
         [SerializeField] private Transform destination;
         [SerializeField] private UnitCombat[] defenders;
+        [SerializeField] private ArmySupply supply;
         private readonly List<UnitCombat> members = new List<UnitCombat>(8);
         private readonly List<UnitCombat> reinforcements = new List<UnitCombat>(8);
         private readonly List<Collider2D> overlaps = new List<Collider2D>(16);
@@ -55,6 +57,7 @@ namespace ProjectF.Invasion
             for (int i = reinforcements.Count - 1; i >= 0; i--)
                 if (reinforcements[i] == null || !reinforcements[i].IsAlive) reinforcements.RemoveAt(i);
             reinforcements.Add(defender);
+            defender.InitializeSupply(supply);
             Changed?.Invoke();
         }
 
@@ -71,6 +74,7 @@ namespace ProjectF.Invasion
                 return;
             }
             total = settings.UnitCount;
+            foreach (var defender in defenders) defender.InitializeSupply(supply);
             initialized = true;
             Changed?.Invoke();
         }
@@ -194,7 +198,12 @@ namespace ProjectF.Invasion
             SetState(state);
         }
 
-        private void SetState(InvasionState state) { State = state; Changed?.Invoke(); }
+        private void SetState(InvasionState state)
+        {
+            State = state;
+            if (state == InvasionState.Preparing && supply != null) supply.PrepareForWave(WaveNumber, DefenderCount);
+            Changed?.Invoke();
+        }
 
         private void OnDisable()
         {
