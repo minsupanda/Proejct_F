@@ -35,7 +35,9 @@ namespace ProjectF.Tests
         public IEnumerator SetUp()
         {
             fixture = new InputTestFixture(); fixture.Setup(); mouse = InputSystem.AddDevice<Mouse>(); keyboard = InputSystem.AddDevice<Keyboard>();
-            yield return SceneManager.LoadSceneAsync("BasicCombat"); yield return null;
+            yield return SceneManager.LoadSceneAsync("BasicCombat");
+            // This fixture covers existing behavior; supply the new recruitment prerequisite.
+            Assert.That(Object.FindAnyObjectByType<ProjectF.Economy.EstateStockpile>().TryAddFood(100), Is.True); yield return null;
             ally = GameObject.Find("Lord").GetComponent<UnitCombat>(); order = ally.GetComponent<AttackMoveOrder>();
             settings = Object.Instantiate(Get<AttackMoveSettings>(order, "settings")); Set(order, "settings", settings);
             Place(ally, new Vector2(-8, -7)); CombatTestScene.AddGuards(); enemy = GameObject.Find("Enemy 1").GetComponent<UnitCombat>();

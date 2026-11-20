@@ -13,5 +13,6 @@ MonoBehaviour:
   m_Name: RecruitmentSettings
   m_EditorClassIdentifier: ProjectF.Runtime::ProjectF.Combat.RecruitmentSettings
   woodCost: 20
+  foodCost: 4
   trainingSeconds: 5
   maximumAllies: 8

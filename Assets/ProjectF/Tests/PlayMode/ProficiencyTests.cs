@@ -32,7 +32,9 @@ namespace ProjectF.Tests
         public IEnumerator SetUp()
         {
             fixture = new InputTestFixture(); fixture.Setup(); mouse = InputSystem.AddDevice<Mouse>();
-            yield return SceneManager.LoadSceneAsync("BasicCombat"); yield return null;
+            yield return SceneManager.LoadSceneAsync("BasicCombat");
+            // This fixture covers existing behavior; supply the new recruitment prerequisite.
+            Assert.That(Object.FindAnyObjectByType<ProjectF.Economy.EstateStockpile>().TryAddFood(100), Is.True); yield return null;
             soldier = GameObject.Find("Test Unit 2").GetComponent<UnitCombat>(); proficiency = soldier.GetComponent<SoldierProficiency>();
             peer = GameObject.Find("Test Unit 3").GetComponent<UnitCombat>(); lord = GameObject.Find("Lord").GetComponent<UnitCombat>();
             Place(lord, new Vector2(-9, 1)); Place(soldier, new Vector2(-6, 1));

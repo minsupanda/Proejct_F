@@ -30,7 +30,9 @@ namespace ProjectF.Tests
         public IEnumerator SetUp()
         {
             fixture = new InputTestFixture(); fixture.Setup(); mouse = InputSystem.AddDevice<Mouse>(); keyboard = InputSystem.AddDevice<Keyboard>();
-            yield return SceneManager.LoadSceneAsync("BasicCombat"); yield return null;
+            yield return SceneManager.LoadSceneAsync("BasicCombat");
+            // This fixture covers existing behavior; supply the new recruitment prerequisite.
+            Assert.That(Object.FindAnyObjectByType<ProjectF.Economy.EstateStockpile>().TryAddFood(100), Is.True); yield return null;
             pause = Object.FindAnyObjectByType<GamePause>(); ally = GameObject.Find("Lord").GetComponent<UnitCombat>();
             recruitment = Object.FindAnyObjectByType<UnitRecruitment>(); invasion = Object.FindAnyObjectByType<PortalInvasion>(); stockpile = Object.FindAnyObjectByType<EstateStockpile>();
         }

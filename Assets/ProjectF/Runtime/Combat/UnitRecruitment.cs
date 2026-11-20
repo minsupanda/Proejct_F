@@ -25,7 +25,8 @@ namespace ProjectF.Combat
         private readonly List<UnitCombat> recruits = new List<UnitCombat>(8);
         private bool initialized, changingSlot;
         private float nextExitCheck, nextRosterCheck;
-        private int lastCount, serial, paidWood;
+        private int lastCount, serial;
+        private EstatePayment payment;
         public event Action Changed;
         public RecruitmentSettings Settings => settings;
         public int MaximumAllies => settings != null ? Mathf.Min(64, settings.MaximumAllies
@@ -39,9 +40,12 @@ namespace ProjectF.Combat
         public bool PreparationAvailable => initialized && isActiveAndEnabled && invasion != null
             && invasion.isActiveAndEnabled && invasion.State == InvasionState.Ready && Time.timeScale > 0;
         public bool CanTrain => PreparationAvailable && !changingSlot && !IsTraining && stockpile.isActiveAndEnabled
-            && AlliedCount < MaximumAllies && stockpile.Wood >= settings.WoodCost;
-        public int CancellationRefund => IsTraining ? paidWood : 0;
-        public bool CanCancelTraining => PreparationAvailable && !changingSlot && IsTraining && stockpile.CanAddWood(paidWood);
+            && AlliedCount < MaximumAllies && stockpile.CanPay(settings.WoodCost, settings.FoodCost);
+        public bool HasWood => stockpile != null && settings != null && stockpile.Wood >= settings.WoodCost;
+        public bool HasFood => stockpile != null && settings != null && stockpile.Food >= settings.FoodCost;
+        public int CancellationRefund => IsTraining && payment != null ? payment.Wood : 0;
+        public int CancellationFoodRefund => IsTraining && payment != null ? payment.Food : 0;
+        public bool CanCancelTraining => PreparationAvailable && !changingSlot && IsTraining && stockpile.CanRefund(payment);
 
         private void OnEnable()
         {
@@ -74,27 +78,25 @@ namespace ProjectF.Combat
         {
             if (!CanTrain) return false;
             changingSlot = true;
-            // Set the slot before spending: resource listeners cannot queue a second purchase.
+            try { return stockpile.TryPay(settings.WoodCost, settings.FoodCost, BeginPaidSlot); }
+            finally { changingSlot = false; OnContextChanged(); }
+        }
+        private void BeginPaidSlot(EstatePayment receipt)
+        {
+            payment = receipt;
             IsTraining = true; RemainingSeconds = settings.TrainingSeconds; nextExitCheck = 0;
-            paidWood = settings.WoodCost;
-            bool paid;
-            try { paid = stockpile.TrySpendWood(paidWood); }
-            finally { changingSlot = false; }
-            if (!paid) { IsTraining = false; RemainingSeconds = 0; paidWood = 0; }
-            OnContextChanged();
-            return paid;
         }
         /// <summary>Cancel the pending slot and refund its original payment, only during preparation.</summary>
         public bool TryCancelTraining()
         {
             if (!CanCancelTraining) return false;
             changingSlot = true;
-            try { return stockpile.TryAddWood(paidWood, ClearTrainingSlot); }
+            try { return stockpile.TryRefund(payment, ClearTrainingSlot); }
             finally { changingSlot = false; OnContextChanged(); }
         }
         private void ClearTrainingSlot()
         {
-            IsTraining = false; RemainingSeconds = 0; paidWood = 0;
+            IsTraining = false; RemainingSeconds = 0; payment = null;
             nextExitCheck = 0; State = RecruitmentState.Idle;
         }
         public RallyPointResult ValidateRallyPoint(Vector2 point)
@@ -169,20 +171,25 @@ namespace ProjectF.Combat
             foreach (var exit in exits)
             {
                 if (exit == null || Physics2D.OverlapCircle(exit.position, radius + .1f, filter, overlaps) > 0) continue;
-                var recruit = Instantiate(soldierPrefab, exit.position, Quaternion.identity, transform);
-                recruit.name = "Soldier " + (++serial);
-                recruit.GetComponent<CommandableUnit>().InitializeNavigation(navigation);
-                recruit.GetComponent<WoodGatherer>().InitializeEstate(stockpile, invasion);
-                recruit.Died += RemoveDeadRecruits;
-                recruits.Add(recruit);
-                recruit.gameObject.SetActive(true);
-                // Issue once at deployment. Later edits affect only future recruits, never player orders.
-                if (HasRallyPoint) recruit.Unit.MoveTo(RallyPoint);
-                ClearTrainingSlot();
-                invasion.RegisterDefender(recruit);
-                lastCount = AlliedCount;
-                Changed?.Invoke();
-                return true;
+                changingSlot = true;
+                try
+                {
+                    var recruit = Instantiate(soldierPrefab, exit.position, Quaternion.identity, transform);
+                    recruit.name = "Soldier " + (++serial);
+                    recruit.GetComponent<CommandableUnit>().InitializeNavigation(navigation);
+                    recruit.GetComponent<WoodGatherer>().InitializeEstate(stockpile, invasion);
+                    recruit.Died += RemoveDeadRecruits;
+                    recruits.Add(recruit);
+                    recruit.gameObject.SetActive(true);
+                    // Issue once at deployment. Later edits affect only future recruits, never player orders.
+                    if (HasRallyPoint) recruit.Unit.MoveTo(RallyPoint);
+                    invasion.RegisterDefender(recruit);
+                    lastCount = AlliedCount;
+                    // Roster and storage notifications cannot cancel or replace a deploying slot.
+                    stockpile.CompletePayment(payment, ClearTrainingSlot);
+                    return true;
+                }
+                finally { changingSlot = false; Changed?.Invoke(); }
             }
             return false;
         }
@@ -199,6 +206,7 @@ namespace ProjectF.Combat
         }
         private void OnDestroy()
         {
+            if (stockpile != null) stockpile.CompletePayment(payment);
             foreach (var recruit in recruits) if (recruit != null) recruit.Died -= RemoveDeadRecruits;
         }
         private void SetState(RecruitmentState value)

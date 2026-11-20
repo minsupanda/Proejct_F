@@ -32,6 +32,8 @@ namespace ProjectF.Tests
         {
             fixture = new InputTestFixture(); fixture.Setup(); mouse = InputSystem.AddDevice<Mouse>(); InputSystem.AddDevice<Keyboard>();
             yield return SceneManager.LoadSceneAsync("BasicCombat");
+            // This fixture covers existing behavior; supply the new recruitment prerequisite.
+            Assert.That(Object.FindAnyObjectByType<ProjectF.Economy.EstateStockpile>().TryAddFood(100), Is.True);
             recruitment = Object.FindAnyObjectByType<UnitRecruitment>(); stockpile = Object.FindAnyObjectByType<EstateStockpile>(); invasion = Object.FindAnyObjectByType<PortalInvasion>();
             settings = Object.Instantiate(recruitment.Settings); Set(settings, "trainingSeconds", .5f); Set(recruitment, "settings", settings);
             invasionSettings = Object.Instantiate(Get<InvasionSettings>(invasion, "settings"));
@@ -150,7 +152,7 @@ namespace ProjectF.Tests
             Assert.That(recruitment.TrySetRallyPoint(new Vector2(-6, -5)), Is.EqualTo(RallyPointResult.Available));
             var hud = Object.FindAnyObjectByType<RecruitmentHUD>(); var button = hud.transform.Find("Train Soldier").GetComponent<UnityEngine.UI.Button>();
             var label = button.GetComponentInChildren<UnityEngine.UI.Text>(); var point = RectTransformUtility.WorldToScreenPoint(null, button.transform.position);
-            yield return Click(point); Assert.That(label.text, Is.EqualTo("CANCEL +20")); Assert.That(button.interactable, Is.True);
+            yield return Click(point); Assert.That(label.text, Is.EqualTo("CANCEL / REFUND")); Assert.That(button.interactable, Is.True);
             yield return Click(point); Cancelled(); Assert.That(label.text, Is.EqualTo("TRAIN SOLDIER"));
             Assert.That(Object.FindAnyObjectByType<UnitCommandController>().Selected, Does.Contain(ally.Unit)); Assert.That(ally.Unit.CommandOrder, Is.EqualTo(order));
             Assert.That(recruitment.HasRallyPoint, Is.True); Assert.That(recruitment.RallyPoint, Is.EqualTo(new Vector2(-6, -5)));

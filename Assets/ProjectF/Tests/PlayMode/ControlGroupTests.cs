@@ -31,6 +31,8 @@ namespace ProjectF.Tests
             fixture = new InputTestFixture(); fixture.Setup();
             mouse = InputSystem.AddDevice<Mouse>(); keyboard = InputSystem.AddDevice<Keyboard>();
             yield return SceneManager.LoadSceneAsync("BasicCombat");
+            // This fixture covers existing behavior; supply the new recruitment prerequisite.
+            Assert.That(Object.FindAnyObjectByType<ProjectF.Economy.EstateStockpile>().TryAddFood(100), Is.True);
             units = Object.FindObjectsByType<UnitCombat>(FindObjectsSortMode.None).Where(c => c.IsPlayerControlled)
                 .OrderBy(c => c.name).Select(c => c.Unit).ToArray();
             commands = Object.FindAnyObjectByType<UnitCommandController>(); input = Object.FindAnyObjectByType<CommandInput>();
