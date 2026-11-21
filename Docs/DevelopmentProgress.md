@@ -39,7 +39,8 @@
 | 병사 전투 숙련도 | 사용자 승인 완료, main 병합 완료 | [SoldierProficiency](Features/SoldierProficiency.md) |
 | 영주 성장 포인트 | 사용자 승인 완료, main 병합 완료 | [LordGrowth](Features/LordGrowth.md) |
 | 농장 건설·식량 생산 | main 병합 완료 `aca5870` (전체 293개 검사·Windows 빌드 통과) | [FarmProduction](Features/FarmProduction.md) |
-| 병력 충원 식량 비용·취소 환불 | 구현·검증 완료 (전체 308개 검사·Windows 빌드 통과) | [RecruitmentFood](Features/RecruitmentFood.md) |
+| 병력 충원 식량 비용·취소 환불 | main 병합 완료 `e716ac7` (전체 308개 검사·Windows 빌드 통과) | [RecruitmentFood](Features/RecruitmentFood.md) |
+| 방어전 병력 보급·식량 부족 공격력 | 구현·검증 완료, 전체 323개·실제 실행·Windows 빌드 통과 | [ArmySupply](Features/ArmySupply.md) |
 
 생산 시설·전용 일꾼·운반·공성 장비·작업자 수리, 영웅·병종·지휘력, 캠페인 침공 일정·포탈 성장, 정찰·지도, 외교·작위 등은 기획 단계입니다.
 

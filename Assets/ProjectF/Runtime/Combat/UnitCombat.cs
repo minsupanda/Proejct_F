@@ -1,5 +1,6 @@
 using System;
 using ProjectF.Construction;
+using ProjectF.Economy;
 using ProjectF.Player;
 using UnityEngine;
 
@@ -17,6 +18,7 @@ namespace ProjectF.Combat
         private CommandableUnit unit;
         private SoldierProficiency proficiency;
         private LordGrowth lordGrowth;
+        private ArmySupply supply;
         private readonly RaycastHit2D[] sightHits = new RaycastHit2D[32];
         private readonly ContactFilter2D sightFilter = new ContactFilter2D { useTriggers = false };
         private float nextAttackTime, nextPursuitTime, nextStrikeCheckTime;
@@ -30,9 +32,12 @@ namespace ProjectF.Combat
         public UnitFaction Faction => faction;
         public int Health { get; private set; }
         public int MaxHealth => settings != null ? settings.MaxHealth : 0;
-        public int AttackDamage => settings == null ? 0 : (int)Math.Min(int.MaxValue,
+        public int UnmodifiedAttackDamage => settings == null ? 0 : (int)Math.Min(int.MaxValue,
             (long)settings.AttackDamage + (proficiency != null ? proficiency.DamageBonus : 0)
             + (lordGrowth != null ? lordGrowth.DamageBonus : 0));
+        public int SupplyDamagePercent => faction == UnitFaction.Player && supply != null ? supply.CurrentDamagePercent : 100;
+        public int AttackDamage => settings == null ? 0 : Math.Max(1, (int)((long)UnmodifiedAttackDamage * SupplyDamagePercent / 100));
+        internal void InitializeSupply(ArmySupply value) => supply = value;
         public bool IsAlive => Health > 0 && isActiveAndEnabled && unit != null && unit.isActiveAndEnabled;
         public bool IsPlayerControlled => faction == UnitFaction.Player && IsAlive;
         public UnitCombat Target { get; private set; }
